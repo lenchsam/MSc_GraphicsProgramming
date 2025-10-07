@@ -160,11 +160,77 @@ PS_INPUT VS( VS_INPUT input )
 // Pixel Shader
 //--------------------------------------------------------------------------------------
 
+float3 FresnelSchlick(float3 F0, float cosTheta)
+{
+    return F0 + (1 - F0) * pow(1 - cosTheta, 5);
+}
+
+float NormalDistribution(float roughness, float3 N, float3 H)
+{
+    float roughnessSqr = pow(roughness, 2);
+    return (roughnessSqr) / pow(PI * ((pow(dot(N, H), 2)) * (roughnessSqr - 1) + 1), 2);
+}
+
+float G_Sub(float NdotV, float k)
+{
+    return NdotV / (NdotV * (1 - k) + k);
+}
+
+float Geometry(float3 N, float3 V, float3 L, float roughness)
+{
+    float k = pow(roughness + 1, 2) / 8.0;
+    float NdotV = saturate(dot(N, V));
+    float NdotL = saturate(dot(N, L));
+    return G_Sub(NdotV, k) * G_Sub(NdotL, k);
+
+}
+
 float4 PS_PBR(PS_INPUT IN) : SV_TARGET
 {
     float3 finalColour = float4(1, 0, 0, 0);
-    
-    return float4(finalColour, 1.0);
+	
+    float3 albedo = float3(1.0, 0.0, 0.0);
+    float metallic = 0.01;
+    float roughness = 1;
+	
+    float3 N = IN.Norm;
+	
+    float3 V = normalize(EyePosition - IN.worldPos);
+    float3 L = normalize(Lights[0].Position - IN.worldPos); //Light Vector
+    float3 H = normalize(V+L);
+	
+    float cosTheta = saturate(dot(N, V));
+    float NdotL = saturate(dot(N, L));
+	
+	//calculate fresnel
+    float3 F0 = float3(0.04, 0.04, 0.04);
+    F0 = lerp(F0, albedo, metallic);
+	
+	//Fresnel-Schlick Approximation
+    float3 F = FresnelSchlick(F0, cosTheta);
+
+	//specular
+    float D = NormalDistribution(roughness, N, H);
+    float G = Geometry(N, V, L, roughness);
+    float3 Fspecular = (dot(dot(D, G), F)) / 4 * (NdotL) * (dot(N, V));
+	
+    float3 SpecularBRDF = D * G * F / 4 * NdotL * dot(N, V); //final specular BRDF
+	
+	//diffuse lighting
+    float3 kD = (1, 1, 1) - F * (1 - metallic);
+	
+	float diffuse = kD * albedo / PI;
+	
+    float LightOutgoing = (diffuse + SpecularBRDF) * NdotL;
+	
+	LightOutgoing *= Lights[0].Color;
+	
+    float3 ambient = float3(0.03, 0.03, 0.03) * albedo;
+	
+    float colour = ambient + LightOutgoing;
+	
+    return float4(colour, colour, colour, 1.0);
+
 }
 
 //--------------------------------------------------------------------------------------
