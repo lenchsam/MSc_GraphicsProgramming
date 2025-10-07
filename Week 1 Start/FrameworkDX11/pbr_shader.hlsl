@@ -190,8 +190,8 @@ float4 PS_PBR(PS_INPUT IN) : SV_TARGET
     float3 finalColour = float4(1, 0, 0, 0);
 	
     float3 albedo = float3(1.0, 0.0, 0.0);
-    float metallic = 0.01;
-    float roughness = 1;
+    float metallic = 1;
+    float roughness = 0.3;
 	
     float3 N = IN.Norm;
 	
@@ -212,12 +212,11 @@ float4 PS_PBR(PS_INPUT IN) : SV_TARGET
 	//specular
     float D = NormalDistribution(roughness, N, H);
     float G = Geometry(N, V, L, roughness);
-    float3 Fspecular = (dot(dot(D, G), F)) / 4 * (NdotL) * (dot(N, V));
 	
     float3 SpecularBRDF = D * G * F / 4 * NdotL * dot(N, V); //final specular BRDF
 	
 	//diffuse lighting
-    float3 kD = (1, 1, 1) - F * (1 - metallic);
+    float3 kD = (float3(1.0, 1.0, 1.0) - F) * (1.0 - metallic);
 	
 	float diffuse = kD * albedo / PI;
 	
