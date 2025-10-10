@@ -9,6 +9,12 @@ cbuffer ConstantBuffer : register( b0 )
 	float4 vOutputColor;
 }
 
+cbuffer ConstantBufferLighting : register(b2)
+{
+    float metallicness;
+    float rough;
+}
+
 Texture2D albedoMap : register(t0);
 SamplerState samLinear : register(s0);
 
@@ -189,8 +195,8 @@ float Geometry(float3 N, float3 V, float3 L, float roughness)
 float4 PS_PBR(PS_INPUT IN) : SV_TARGET
 {	
     float3 albedo = float3(1.0, 0.0, 0.0);
-    float metallic = 1;
-    float roughness = 0.3;
+    float metallic = metallicness;
+    float roughness = rough;
 	
     float3 N = IN.Norm;
 	

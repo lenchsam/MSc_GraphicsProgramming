@@ -43,6 +43,7 @@ public:
 
 private:
 	void setupLightProperties();
+	void SetupLightingMaterialProperties();
 
 public:
 	Camera* m_pCamera;
@@ -50,11 +51,15 @@ public:
 	Microsoft::WRL::ComPtr <ID3D11Device>			m_pd3dDevice;
 	Microsoft::WRL::ComPtr <ID3D11DeviceContext>	m_pImmediateContext;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBuffer;
+	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBufferLighting;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pLightConstantBuffer;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pCustomConstantBuffer;
 
 
 	LightPropertiesConstantBuffer m_lightProperties;
+
+	ConstantBufferLightingProperties m_propertiesLight;
+
 	IRenderingContext m_ctx;
 	SceneGraph m_sceneobject;
 

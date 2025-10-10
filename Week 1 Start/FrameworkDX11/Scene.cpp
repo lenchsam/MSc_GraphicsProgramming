@@ -32,7 +32,16 @@ HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
     if (FAILED(hr))
         return hr;
 
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(ConstantBufferLighting);
+    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    bd.CPUAccessFlags = 0;
+    hr = m_pd3dDevice->CreateBuffer(&bd, nullptr, &m_pConstantBufferLighting);
+    if (FAILED(hr))
+        return hr;
+
     setupLightProperties();
+    SetupLightingMaterialProperties();
 
     // Create the light constant buffer
     bd.Usage = D3D11_USAGE_DEFAULT;
@@ -59,14 +68,17 @@ HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
     sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
     hr = m_pd3dDevice->CreateSamplerState(&sampDesc, &m_pSamplerLinear);
 
-    
-
     return S_OK;
 }
 
 void Scene::cleanUp()
 {
     delete m_pCamera;
+}
+
+void Scene::SetupLightingMaterialProperties() {
+    m_propertiesLight.metallicness = 0.1f;
+    m_propertiesLight.rough = 0.3f;
 }
 
 void Scene::setupLightProperties()
@@ -81,8 +93,8 @@ void Scene::setupLightProperties()
     light.QuadraticAttenuation = 1;
 
     // set up the light
-   // XMFLOAT4 LightPosition(m_pCamera->getPosition().x, m_pCamera->getPosition().y, m_pCamera->getPosition().z, 1);
-   XMFLOAT4 LightPosition(5, 5, -6, 1);
+    // XMFLOAT4 LightPosition(m_pCamera->getPosition().x, m_pCamera->getPosition().y, m_pCamera->getPosition().z, 1);
+    XMFLOAT4 LightPosition(5, 5, -6, 1);
     light.Position = LightPosition;
     
     m_lightProperties.EyePosition = LightPosition;
@@ -101,12 +113,17 @@ void Scene::update(const float deltaTime)
     cb1.mProjection = XMMatrixTranspose(getCamera()->getProjectionMatrix());
     cb1.vOutputColor = XMFLOAT4(0, 0, 0, 0);
 
+    ConstantBufferLighting cbL;
 
     m_lightProperties.EyePosition = XMFLOAT4(m_pCamera->getPosition().x, m_pCamera->getPosition().y, m_pCamera->getPosition().z, 1);
 
     m_pImmediateContext->UpdateSubresource(m_pLightConstantBuffer.Get(), 0, nullptr, &m_lightProperties, 0, 0);
     ID3D11Buffer* buf = m_pLightConstantBuffer.Get();
     m_pImmediateContext->PSSetConstantBuffers(1, 1, &buf);
+
+    m_pImmediateContext->UpdateSubresource(m_pConstantBufferLighting.Get(), 0, nullptr, &m_propertiesLight, 0, 0);
+    ID3D11Buffer* buff = m_pConstantBufferLighting.Get();
+    m_pImmediateContext->PSSetConstantBuffers(2, 1, &buff);
 
     // scene object 1 
     m_sceneobject.AnimateFrame(m_ctx); // this updates the transform matrix for the object - this should be called after all transforms have been made

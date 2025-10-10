@@ -20,6 +20,13 @@ struct ConstantBuffer
 	unsigned int bone_count;
 };
 
+struct ConstantBufferLighting {
+	float mMetallic;			//4 bytes
+	float mRoughness;		//4 bytes
+	float asdf;
+	float asfs;
+};
+
 
 
 enum LightType
@@ -77,4 +84,15 @@ struct LightPropertiesConstantBuffer
 	//----------------------------------- (16 byte boundary)
 	Light               Lights[MAX_LIGHTS]; // 80 * 8 bytes
 };  // Total:                                  672 bytes (42 * 16)
+
+struct ConstantBufferLightingProperties {
+	ConstantBufferLightingProperties()
+		: metallicness(0.3)
+		, rough(1.0)
+
+	{}
+
+	float metallicness;
+	float rough;
+};
 
