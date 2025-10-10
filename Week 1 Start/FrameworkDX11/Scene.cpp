@@ -81,7 +81,8 @@ void Scene::setupLightProperties()
     light.QuadraticAttenuation = 1;
 
     // set up the light
-    XMFLOAT4 LightPosition(m_pCamera->getPosition().x, m_pCamera->getPosition().y, m_pCamera->getPosition().z, 1);
+   // XMFLOAT4 LightPosition(m_pCamera->getPosition().x, m_pCamera->getPosition().y, m_pCamera->getPosition().z, 1);
+   XMFLOAT4 LightPosition(5, 5, -6, 1);
     light.Position = LightPosition;
     
     m_lightProperties.EyePosition = LightPosition;

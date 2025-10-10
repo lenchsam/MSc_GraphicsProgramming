@@ -168,7 +168,8 @@ float3 FresnelSchlick(float3 F0, float cosTheta)
 float NormalDistribution(float roughness, float3 N, float3 H)
 {
     float roughnessSqr = pow(roughness, 2);
-    return (roughnessSqr) / pow(PI * ((pow(dot(N, H), 2)) * (roughnessSqr - 1) + 1), 2);
+    float NdotHsqr = pow(dot(N, H), 2);
+    return roughnessSqr / (PI * pow((NdotHsqr * (roughnessSqr - 1) + 1), 2));
 }
 
 float G_Sub(float NdotV, float k)
@@ -186,9 +187,7 @@ float Geometry(float3 N, float3 V, float3 L, float roughness)
 }
 
 float4 PS_PBR(PS_INPUT IN) : SV_TARGET
-{
-    float3 finalColour = float4(1, 0, 0, 0);
-	
+{	
     float3 albedo = float3(1.0, 0.0, 0.0);
     float metallic = 1;
     float roughness = 0.3;
@@ -202,33 +201,46 @@ float4 PS_PBR(PS_INPUT IN) : SV_TARGET
     float cosTheta = saturate(dot(N, V));
     float NdotL = saturate(dot(N, L));
 	
-	//calculate fresnel
+	//--------------------------------------------------------------calculate fresnel
     float3 F0 = float3(0.04, 0.04, 0.04);
     F0 = lerp(F0, albedo, metallic);
 	
 	//Fresnel-Schlick Approximation
     float3 F = FresnelSchlick(F0, cosTheta);
 
-	//specular
+	//--------------------------------------------------------------specular
     float D = NormalDistribution(roughness, N, H);
+	
+	// test
+    //return float4(D, D, D, 1.0);
+	
     float G = Geometry(N, V, L, roughness);
 	
-    float3 SpecularBRDF = D * G * F / 4 * NdotL * dot(N, V); //final specular BRDF
+	// test
+    //return float4(G, G, G, 1.0);
 	
-	//diffuse lighting
-    float3 kD = (float3(1.0, 1.0, 1.0) - F) * (1.0 - metallic);
+    float3 SpecularBRDF = float3(D * G * F) / float(4 * NdotL * cosTheta); //final specular BRDF
 	
-	float diffuse = kD * albedo / PI;
+	// test
+    //return float4(SpecularBRDF, 1.0);
 	
-    float LightOutgoing = (diffuse + SpecularBRDF) * NdotL;
+	//--------------------------------------------------------------diffuse lighting
+    float3 kD = float3(1.0, 1.0, 1.0) - F * (1.0 - metallic);
 	
-	LightOutgoing *= Lights[0].Color;
+	// test
+	//return float4(kD, 1.0);
+	
+    float3 diffuse = kD * albedo / PI;
+	
+    float3 LightOutgoing = (diffuse + SpecularBRDF) * NdotL;
+	
+    return float4(LightOutgoing, 1.0);
 	
     float3 ambient = float3(0.03, 0.03, 0.03) * albedo;
 	
-    float colour = ambient + LightOutgoing;
+    float3 finalColor = ambient * LightOutgoing;	
 	
-    return float4(colour, colour, colour, 1.0);
+    //return float4(finalColor, 1);
 
 }
 
