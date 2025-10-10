@@ -77,7 +77,7 @@ void Scene::cleanUp()
 }
 
 void Scene::SetupLightingMaterialProperties() {
-    m_propertiesLight.metallicness = 0.1f;
+    m_propertiesLight.metallicness = 1.0f;
     m_propertiesLight.rough = 0.3f;
 }
 

@@ -231,12 +231,11 @@ float4 PS_PBR(PS_INPUT IN) : SV_TARGET
     //return float4(SpecularBRDF, 1.0);
 	
 	//--------------------------------------------------------------diffuse lighting
-    float3 kD = float3(1.0, 1.0, 1.0) - F * (1.0 - metallic);
 	
-	// test
-	//return float4(kD, 1.0);
-	
-    float3 diffuse = kD * albedo / PI;
+    float3 kD = 1.0 - F;
+    kD *= (1.0 - metallic); //fade out diffuse for metals
+
+    float3 diffuse = kD * (albedo / PI);
 	
     float3 LightOutgoing = (diffuse + SpecularBRDF) * NdotL;
 	
