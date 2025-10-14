@@ -41,6 +41,7 @@ public:
 	
 	const LightPropertiesConstantBuffer& getLightProperties() { return m_lightProperties; }
 	ConstantBufferPBRProperties& getPBRProperties() { return m_propertiesLight; }
+	ConstantBufferAlbedo& getAlbedoProperties() { return m_propertiesAlbedo; }
 
 private:
 	void setupLightProperties();
@@ -53,6 +54,7 @@ public:
 	Microsoft::WRL::ComPtr <ID3D11DeviceContext>	m_pImmediateContext;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBuffer;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBufferLighting;
+	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pConstantBufferAlbedo;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pLightConstantBuffer;
 	Microsoft::WRL::ComPtr <ID3D11Buffer>			m_pCustomConstantBuffer;
 
@@ -60,6 +62,7 @@ public:
 	LightPropertiesConstantBuffer m_lightProperties;
 
 	ConstantBufferPBRProperties m_propertiesLight;
+	ConstantBufferAlbedo m_propertiesAlbedo;
 
 	IRenderingContext m_ctx;
 	SceneGraph m_sceneobject;

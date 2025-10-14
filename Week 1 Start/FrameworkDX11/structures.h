@@ -92,15 +92,19 @@ struct ConstantBufferPBRProperties {
 		, rough(1.0)
 		, IBLType(0)
 		, padding(0.0f)
-		, AlbedoColour (0.3, 0.3, 0.3, 1.0)
 	{}
-
-	DirectX::XMFLOAT4 AlbedoColour;	//16 bytes
-	//----------------------------------- (16 byte boundary)
 	float metallicness;		//4 bytes
 	float rough;			//4 bytes
 	int IBLType;			//4 bytes
 	float padding;			//4 bytes
+	//----------------------------------- (16 byte boundary)
+};
+
+struct ConstantBufferAlbedo {
+	ConstantBufferAlbedo()
+		: AlbedoColour(1.0f, 0.78f, 0.34f, 1.0f)
+	{}
+	DirectX::XMFLOAT4 AlbedoColour;	//16 bytes
 	//----------------------------------- (16 byte boundary)
 };
 

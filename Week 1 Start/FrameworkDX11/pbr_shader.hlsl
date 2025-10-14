@@ -11,12 +11,18 @@ cbuffer ConstantBuffer : register( b0 )
 
 cbuffer ConstantBufferPBR : register(b2)
 {
-    float4 AlbedoColour;	//16 bytes
+    //float4 AlbedoColour;	//16 bytes
 							//----------------------------------- (16 byte boundary)
     float metallicness;		//4 bytes
     float rough;			//4 bytes
     int IBLType;			//4 bytes
     float padding;			//4 bytes
+							//----------------------------------- (16 byte boundary)
+}
+
+cbuffer ConstantBufferAlbedo : register(b3)
+{
+	float4 AlbedoColour;	//16 bytes
 							//----------------------------------- (16 byte boundary)
 }
 
@@ -200,7 +206,7 @@ float Geometry(float3 N, float3 V, float3 L, float roughness)
 float4 PS_PBR(PS_INPUT IN) : SV_TARGET
 {	
 	//-------------------------------------------------------------- Part A PBR Lighting
-    float3 albedo = float3(AlbedoColour.x, AlbedoColour.y, AlbedoColour.z);
+    float3 albedo = AlbedoColour;
     float metallic = metallicness;
     float roughness = rough;
 	

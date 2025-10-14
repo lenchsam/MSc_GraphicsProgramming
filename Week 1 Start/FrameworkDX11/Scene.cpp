@@ -40,6 +40,14 @@ HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
     if (FAILED(hr))
         return hr;
 
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(ConstantBufferAlbedo);
+    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    bd.CPUAccessFlags = 0;
+    hr = m_pd3dDevice->CreateBuffer(&bd, nullptr, &m_pConstantBufferAlbedo);
+    if (FAILED(hr))
+        return hr;
+
     setupLightProperties();
     SetupPBRProperties();
 
@@ -77,10 +85,10 @@ void Scene::cleanUp()
 }
 
 void Scene::SetupPBRProperties() {
-    m_propertiesLight.metallicness = 0.0f;
+	m_propertiesAlbedo.AlbedoColour = XMFLOAT4(1.0f, 0.78f, 0.34f, 1.0f);
+    m_propertiesLight.metallicness = 1.0f;
     m_propertiesLight.rough = 0.01f;
     m_propertiesLight.IBLType = 0;
-	m_propertiesLight.AlbedoColour = XMFLOAT4(1.0f, 0.78f, 0.34f, 1.0f);
 }
 
 void Scene::setupLightProperties()
@@ -124,8 +132,12 @@ void Scene::update(const float deltaTime)
     m_pImmediateContext->PSSetConstantBuffers(1, 1, &buf);
 
     m_pImmediateContext->UpdateSubresource(m_pConstantBufferLighting.Get(), 0, nullptr, &m_propertiesLight, 0, 0);
-    ID3D11Buffer* buff = m_pConstantBufferLighting.Get();
-    m_pImmediateContext->PSSetConstantBuffers(2, 1, &buff);
+    ID3D11Buffer* buf_lighting = m_pConstantBufferLighting.Get();
+    m_pImmediateContext->PSSetConstantBuffers(2, 1, &buf_lighting);
+
+    m_pImmediateContext->UpdateSubresource(m_pConstantBufferAlbedo.Get(), 0, nullptr, &m_propertiesAlbedo, 0, 0);
+    ID3D11Buffer* buf_albedo = m_pConstantBufferAlbedo.Get();
+    m_pImmediateContext->PSSetConstantBuffers(3, 1, &buf_albedo);
 
     // scene object 1 
     m_sceneobject.AnimateFrame(m_ctx); // this updates the transform matrix for the object - this should be called after all transforms have been made

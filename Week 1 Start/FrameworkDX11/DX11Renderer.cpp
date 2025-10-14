@@ -509,13 +509,13 @@ void DX11Renderer::startIMGUIDraw(const unsigned int FPS)
     //ImGUI controls for PBR properties
     ImGui::SeparatorText("Physically Based Rendering Lighting Properties");
     ConstantBufferPBRProperties& lightProperties = m_pScene->getPBRProperties();
+    ConstantBufferAlbedo& albedoProperties = m_pScene->getAlbedoProperties();
 
-    //ImGui::ColorEdit3("AmbientColour", lightProperties.AlbedoColour);
-    float albedoColorArray[3] = { lightProperties.AlbedoColour.x, lightProperties.AlbedoColour.y, lightProperties.AlbedoColour.z };  
+    float albedoColorArray[3] = { albedoProperties.AlbedoColour.x, albedoProperties.AlbedoColour.y, albedoProperties.AlbedoColour.z };
     if (ImGui::ColorEdit3("AmbientColour", albedoColorArray)) {  
-        lightProperties.AlbedoColour.x = albedoColorArray[0];  
-        lightProperties.AlbedoColour.y = albedoColorArray[1];  
-        lightProperties.AlbedoColour.z = albedoColorArray[2];  
+        albedoProperties.AlbedoColour.x = albedoColorArray[0];
+        albedoProperties.AlbedoColour.y = albedoColorArray[1];
+        albedoProperties.AlbedoColour.z = albedoColorArray[2];
     }
     ImGui::SliderFloat("Metallicness", &lightProperties.metallicness, 0.0f, 1.0f);
 
