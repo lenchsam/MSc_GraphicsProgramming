@@ -11,12 +11,13 @@ cbuffer ConstantBuffer : register( b0 )
 
 cbuffer ConstantBufferPBR : register(b2)
 {
+    float4 AlbedoColour;	//16 bytes
+							//----------------------------------- (16 byte boundary)
     float metallicness;		//4 bytes
     float rough;			//4 bytes
     int IBLType;			//4 bytes
-    //float3 AlbedoColour;	//12 bytes
-	
-    float Padding; //4 bytes
+    float padding;			//4 bytes
+							//----------------------------------- (16 byte boundary)
 }
 
 Texture2D albedoMap : register(t0);
@@ -199,7 +200,7 @@ float Geometry(float3 N, float3 V, float3 L, float roughness)
 float4 PS_PBR(PS_INPUT IN) : SV_TARGET
 {	
 	//-------------------------------------------------------------- Part A PBR Lighting
-    float3 albedo = float3(1.0, 0.78, 0.34);
+    float3 albedo = float3(AlbedoColour.x, AlbedoColour.y, AlbedoColour.z);
     float metallic = metallicness;
     float roughness = rough;
 	

@@ -5,6 +5,7 @@ using namespace std;
 using namespace DirectX;
 #include "constants.h"
 
+
 //--------------------------------------------------------------------------------------
 // Structures
 //--------------------------------------------------------------------------------------
@@ -90,17 +91,16 @@ struct ConstantBufferPBRProperties {
 		: metallicness(0.3)
 		, rough(1.0)
 		, IBLType(0)
-		//, AlbedoColour {0.3, 0.3, 0.3}
+		, padding(0.0f)
+		, AlbedoColour (0.3, 0.3, 0.3, 1.0)
 	{}
 
+	DirectX::XMFLOAT4 AlbedoColour;	//16 bytes
+	//----------------------------------- (16 byte boundary)
 	float metallicness;		//4 bytes
 	float rough;			//4 bytes
 	int IBLType;			//4 bytes
-
-	float padding; // 4 bytes
-	//float AlbedoColour[3]; //12 bytes
-							//total = 24
-	//padding to get to 32 
-	//float padding[2];
+	float padding;			//4 bytes
+	//----------------------------------- (16 byte boundary)
 };
 
