@@ -11,10 +11,12 @@ cbuffer ConstantBuffer : register( b0 )
 
 cbuffer ConstantBufferPBR : register(b2)
 {
-    float metallicness;
-    float rough;
-    float2 padding;
-
+    float metallicness;		//4 bytes
+    float rough;			//4 bytes
+    int IBLType;			//4 bytes
+    //float3 AlbedoColour;	//12 bytes
+	
+    float Padding; //4 bytes
 }
 
 Texture2D albedoMap : register(t0);
@@ -196,7 +198,8 @@ float Geometry(float3 N, float3 V, float3 L, float roughness)
 
 float4 PS_PBR(PS_INPUT IN) : SV_TARGET
 {	
-    float3 albedo = float3(1.0, 0.0, 0.0);
+	//-------------------------------------------------------------- Part A PBR Lighting
+    float3 albedo = float3(1.0, 0.78, 0.34);
     float metallic = metallicness;
     float roughness = rough;
 	
@@ -209,14 +212,14 @@ float4 PS_PBR(PS_INPUT IN) : SV_TARGET
     float cosTheta = saturate(dot(N, V));
     float NdotL = saturate(dot(N, L));
 	
-	//--------------------------------------------------------------calculate fresnel
+	//calculate fresnel
     float3 F0 = float3(0.04, 0.04, 0.04);
     F0 = lerp(F0, albedo, metallic);
 	
 	//Fresnel-Schlick Approximation
     float3 F = FresnelSchlick(F0, cosTheta);
 
-	//--------------------------------------------------------------specular
+	//specular
     float D = NormalDistribution(roughness, N, H);
 	
 	// test
@@ -227,26 +230,46 @@ float4 PS_PBR(PS_INPUT IN) : SV_TARGET
 	// test
     //return float4(G, G, G, 1.0);
 	
-    float3 SpecularBRDF = float3(D * G * F) / float(4 * NdotL * cosTheta); //final specular BRDF
+    float3 numerator = float3(D * G * F);
+    float denom = float(4 * NdotL * cosTheta) + 0.001f;
+	
+    float3 SpecularBRDF = numerator / denom; //final specular BRDF
 	
 	// test
     //return float4(SpecularBRDF, 1.0);
 	
-	//--------------------------------------------------------------diffuse lighting
+	//diffuse lighting
 	
-    float3 kD = 1.0 - F;
+    float3 kD = float3(1.0, 1.0, 1.0) - F;
     kD *= (1.0 - metallic); //fade out diffuse for metals
 
     float3 diffuse = kD * (albedo / PI);
 	
     float3 LightOutgoing = (diffuse + SpecularBRDF) * NdotL;
+
+	//-------------------------------------------------------------- Part B Environment Lighting
+	//IBL = Image Based Lighting
+    float3 finalIBL = float3(0, 0, 0);
+
+    int typeIBL = IBLType;
+
+    if (typeIBL == 0)
+    {
+        float3 ambientColour = float3(0.1, 0.1, 0.1);
+        finalIBL = ambientColour * albedo * kD;
+    }
+    else if (typeIBL == 1)
+    {
+
+    }
+    else if (typeIBL == 2)
+    {
+
+    }
 	
-    return float4(LightOutgoing, 1.0);
-	
-    float3 ambient = float3(0.03, 0.03, 0.03) * albedo;
-    float3 finalColor = ambient + LightOutgoing;
-	
-    return float4(finalColor, 1.0);
+    float3 colour = finalIBL + LightOutgoing;
+
+    return float4(colour, 1.0);
 
 }
 

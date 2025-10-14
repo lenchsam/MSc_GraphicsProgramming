@@ -78,7 +78,11 @@ void Scene::cleanUp()
 
 void Scene::SetupPBRProperties() {
     m_propertiesLight.metallicness = 1.0f;
-    m_propertiesLight.rough = 0.3f;
+    m_propertiesLight.rough = 0.01f;
+    m_propertiesLight.IBLType = 0;
+    //m_propertiesLight.AlbedoColour[0] = 1.0f;
+    //m_propertiesLight.AlbedoColour[1] = 0.78f;
+    //m_propertiesLight.AlbedoColour[2] = 0.34f;
 }
 
 void Scene::setupLightProperties()

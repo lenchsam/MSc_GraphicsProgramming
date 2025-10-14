@@ -507,10 +507,21 @@ void DX11Renderer::startIMGUIDraw(const unsigned int FPS)
     ImGui::Begin("PBR Controls");
 
     //ImGUI controls for PBR properties
+    ImGui::SeparatorText("Physically Based Rendering Lighting Properties");
     ConstantBufferPBRProperties& lightProperties = m_pScene->getPBRProperties();
+
+    
+    //ImGui::ColorEdit3("color 1", lightProperties.AlbedoColour);
+
     ImGui::SliderFloat("Metallicness", &lightProperties.metallicness, 0.0f, 1.0f);
 
     ImGui::SliderFloat("Roughness", &lightProperties.rough, 0.0f, 1.0f);
+
+    ImGui::SeparatorText("Image Based Lighting");
+
+    ImGui::RadioButton("IBL Type 1", &lightProperties.IBLType, 0); ImGui::SameLine();
+    ImGui::RadioButton("IBL Type 2", &lightProperties.IBLType, 1); ImGui::SameLine();
+    ImGui::RadioButton("IBL Type 3", &lightProperties.IBLType, 2);
 
     ImGui::End();
 
