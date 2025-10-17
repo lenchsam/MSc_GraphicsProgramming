@@ -103,8 +103,14 @@ struct ConstantBufferPBRProperties {
 struct ConstantBufferAlbedo {
 	ConstantBufferAlbedo()
 		: AlbedoColour(1.0f, 0.78f, 0.34f, 1.0f)
+		,SkyColour(0.11f, 0.11f, 0.94f, 1.0f)
+		,GroundColour(0.0f, 0.33f, 0.0f, 1.0f)
 	{}
 	DirectX::XMFLOAT4 AlbedoColour;	//16 bytes
+	//----------------------------------- (16 byte boundary)
+	DirectX::XMFLOAT4 SkyColour;	//16 bytes
+	//----------------------------------- (16 byte boundary)
+	DirectX::XMFLOAT4 GroundColour;	//16 bytes
 	//----------------------------------- (16 byte boundary)
 };
 

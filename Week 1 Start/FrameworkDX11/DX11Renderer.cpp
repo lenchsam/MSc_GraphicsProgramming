@@ -517,16 +517,34 @@ void DX11Renderer::startIMGUIDraw(const unsigned int FPS)
         albedoProperties.AlbedoColour.y = albedoColorArray[1];
         albedoProperties.AlbedoColour.z = albedoColorArray[2];
     }
+    
     ImGui::SliderFloat("Metallicness", &lightProperties.metallicness, 0.0f, 1.0f);
 
     ImGui::SliderFloat("Roughness", &lightProperties.rough, 0.0f, 1.0f);
 
-    ImGui::SeparatorText("Image Based Lighting");
+    ImGui::SeparatorText("Physically Based Rendering Lighting Properties");
 
     ImGui::RadioButton("IBL Type 1", &lightProperties.IBLType, 0); ImGui::SameLine();
     ImGui::RadioButton("IBL Type 2", &lightProperties.IBLType, 1); ImGui::SameLine();
     ImGui::RadioButton("IBL Type 3", &lightProperties.IBLType, 2);
 
+    if (lightProperties.IBLType == 1) {
+        float skyColorArray[3] = { albedoProperties.SkyColour.x, albedoProperties.SkyColour.y, albedoProperties.SkyColour.z };
+        if (ImGui::ColorEdit3("SkyColour", skyColorArray)) {
+            albedoProperties.SkyColour.x = skyColorArray[0];
+            albedoProperties.SkyColour.y = skyColorArray[1];
+            albedoProperties.SkyColour.z = skyColorArray[2];
+        }
+
+        float groundColorArray[3] = { albedoProperties.GroundColour.x, albedoProperties.GroundColour.y, albedoProperties.GroundColour.z };
+        if (ImGui::ColorEdit3("GroundColour", groundColorArray)) {
+            albedoProperties.GroundColour.x = groundColorArray[0];
+            albedoProperties.GroundColour.y = groundColorArray[1];
+            albedoProperties.GroundColour.z = groundColorArray[2];
+        }
+    }
+
+    
     ImGui::End();
 
     // YOU will want to modify this for your own debug, controls etc - comment it out to hide the window

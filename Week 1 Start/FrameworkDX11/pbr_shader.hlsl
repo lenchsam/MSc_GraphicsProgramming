@@ -22,7 +22,11 @@ cbuffer ConstantBufferPBR : register(b2)
 
 cbuffer ConstantBufferAlbedo : register(b3)
 {
-	float4 AlbedoColour;	//16 bytes
+	float4 AlbedoColour;	
+							//----------------------------------- (16 byte boundary)
+    float4 SkyColourCB;
+							//----------------------------------- (16 byte boundary)
+    float4 GroundColourCB;
 							//----------------------------------- (16 byte boundary)
 }
 
@@ -286,8 +290,8 @@ float4 PS_PBR(PS_INPUT IN) : SV_TARGET
     }
     else if (typeIBL == 1)
     {
-        float3 SkyColour = float3(0.11, 0.11, 0.94); // A blue sky
-        float3 GroundColour = float3(0.0, 0.33, 0.0); // A green ground
+        float3 SkyColour = SkyColourCB; // A blue sky
+        float3 GroundColour = GroundColourCB; // A green ground
 		
 		float3 upVector = float3(0, 1, 0);
 		

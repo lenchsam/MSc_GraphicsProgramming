@@ -94,9 +94,11 @@ void Scene::cleanUp()
 
 void Scene::SetupPBRProperties() {
 	m_propertiesAlbedo.AlbedoColour = XMFLOAT4(1.0f, 0.78f, 0.34f, 1.0f);
+	m_propertiesAlbedo.SkyColour = XMFLOAT4(0.11f, 0.11f, 0.94f, 1.0f);
+	m_propertiesAlbedo.GroundColour = XMFLOAT4(0.0f, 0.33f, 0.0f, 1.0f);
     m_propertiesLight.metallicness = 1.0f;
     m_propertiesLight.rough = 0.01f;
-    m_propertiesLight.IBLType = 0;
+    m_propertiesLight.IBLType = 1;
 }
 
 void Scene::setupLightProperties()
