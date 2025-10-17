@@ -27,6 +27,9 @@ cbuffer ConstantBufferAlbedo : register(b3)
 }
 
 Texture2D albedoMap : register(t0);
+TextureCube iblSpecular : register(t1);
+TextureCube iblIrradiance : register(t2);
+
 SamplerState samLinear : register(s0);
 
 static const float PI = 3.14159265f;
@@ -200,6 +203,22 @@ float Geometry(float3 N, float3 V, float3 L, float roughness)
     float NdotV = saturate(dot(N, V));
     float NdotL = saturate(dot(N, L));
     return G_Sub(NdotV, k) * G_Sub(NdotL, k);
+}
+
+float2 IntegrateBRDF(float NdotV, float roughness)
+{
+
+    const float4 c0 = float4(-1, -0.0275, -0.572, 0.022);
+
+    const float4 c1 = float4(1, 0.0425, 1.04, -0.04);
+
+
+    float4 r = roughness * c0 + c1;
+
+    float a004 = min(r.x * r.x, exp2(-9.28 * NdotV)) * r.x + r.y;
+
+
+    return float2(-1.04, 1.04) * a004 + r.zw;
 
 }
 
@@ -262,16 +281,47 @@ float4 PS_PBR(PS_INPUT IN) : SV_TARGET
 
     if (typeIBL == 0)
     {
-        float3 ambientColour = float3(0.1, 0.1, 0.1);
+        float3 ambientColour = float3(0.3, 0.3, 0.3);
         finalIBL = ambientColour * albedo * kD;
     }
     else if (typeIBL == 1)
     {
-
+        float3 SkyColour = float3(0.11, 0.11, 0.94); // A blue sky
+        float3 GroundColour = float3(0.0, 0.33, 0.0); // A green ground
+		
+		float3 upVector = float3(0, 1, 0);
+		
+		//calculate diffuse ambient light
+        float NdotUp = dot(N, upVector);
+        float blend_factor = dot(N, upVector) * 0.5 + 0.5;
+		float3 diffuseLightColour = lerp(GroundColour, SkyColour, blend_factor);
+	
+		//specular ambient light
+		float3 R = reflect(-V, N);
+        blend_factor = dot(R, upVector) * 0.5 + 0.5;
+        float3 specularLightColour = lerp(GroundColour, SkyColour, blend_factor);
+		
+		//combine diffuse and specular ambient light
+        finalIBL = diffuseLightColour * albedo * kD + specularLightColour * F;
+		
     }
     else if (typeIBL == 2)
     {
-
+		//calculate diffuse IBL
+        float3 irradiance = iblIrradiance.Sample(samLinear, N).rgb;
+        float3 diffuseIBL = kD * albedo * irradiance;
+		
+		//calculate specular IBL
+        const float maxReflectionLod = 10.0;
+		float3 R = reflect(-V, N);
+        float prefilteredLod = roughness * maxReflectionLod;
+        float3 prefilteredColour = iblSpecular.SampleLevel(samLinear, R, roughness * maxReflectionLod).rgb;
+		
+        float2 BRDF = IntegrateBRDF(cosTheta, roughness);
+		
+        float3 specularIBL = prefilteredColour * (F * BRDF.x + BRDF.y);
+		
+        finalIBL = diffuseIBL + specularIBL;
     }
 	
     float3 colour = finalIBL + LightOutgoing;
