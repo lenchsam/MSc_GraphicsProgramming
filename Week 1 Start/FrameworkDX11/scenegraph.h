@@ -220,6 +220,8 @@ public:
 
     void AnimateFrame(IRenderingContext& ctx);
 
+    SceneNode* GetRootNode(int index) {return &mRootNodes[index];}
+
 
 private:
 

@@ -43,6 +43,10 @@ public:
 	ConstantBufferPBRProperties& getPBRProperties() { return m_propertiesLight; }
 	ConstantBufferAlbedo& getAlbedoProperties() { return m_propertiesAlbedo; }
 
+	//animation 
+	DirectX::XMFLOAT4 m_startRot;
+	DirectX::XMFLOAT4 m_endRot;
+
 private:
 	void setupLightProperties();
 	void SetupPBRProperties();
@@ -67,6 +71,11 @@ public:
 	IRenderingContext m_ctx;
 	SceneGraph m_sceneobject;
 
+	//animation section
+	DirectX::XMFLOAT3 m_startPos = { -3.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3 m_endPos = { 3.0f, 0.0f, 0.0f };
+	float m_t = 0.0f;
+	float m_direction = 1.0f;
 
 private:
 	ID3D11ShaderResourceView* m_pTextureDiffuse;

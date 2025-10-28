@@ -1,5 +1,6 @@
 #include "Scene.h"
 #include "DDSTextureLoader.h"
+#include <algorithm>
 
 
 HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& device, const Microsoft::WRL::ComPtr<ID3D11DeviceContext>& context, DX11Renderer* renderer)
@@ -15,7 +16,8 @@ HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
 
     m_ctx.Init(device.Get(), context.Get(), renderer);
     //bool ok = m_sceneobject.LoadSphere(m_ctx);
-    bool ok = m_sceneobject.LoadGLTF(m_ctx, L"Resources\\sphere.gltf");
+    //bool ok = m_sceneobject.LoadGLTF(m_ctx, L"Resources\\sphere.gltf");
+    bool ok = m_sceneobject.LoadGLTF(m_ctx, L"Resources\\Box.gltf");
     //bool ok = m_sceneobject.LoadGLTF(m_ctx, L"Resources\\FlightHelmet.gltf");
     //bool ok = m_sceneobject.LoadGLTFWithSkeleton(m_ctx, L"Resources\\Fox.gltf");
 
@@ -83,6 +85,15 @@ HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
     sampDesc.MinLOD = 0;
     sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
     hr = m_pd3dDevice->CreateSamplerState(&sampDesc, &m_pSamplerLinear);
+
+	//animation setup
+    //---------------------------------------------------------------------------------rotation
+    DirectX::XMStoreFloat4(&m_startRot, DirectX::XMQuaternionIdentity()); //No rotation
+    DirectX::XMStoreFloat4(&m_endRot, DirectX::XMQuaternionRotationAxis(
+        DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), // Y-axis
+        DirectX::XM_PI // 180 degrees
+    ));
+
 
     return S_OK;
 }
@@ -156,5 +167,36 @@ void Scene::update(const float deltaTime)
     m_sceneobject.AnimateFrame(m_ctx); // this updates the transform matrix for the object - this should be called after all transforms have been made
     
     m_sceneobject.RenderFrame(m_ctx, deltaTime); // renders the object
+
+	//animation update
+    //---------------------------------------------------------------------------------moving
+    m_t += deltaTime * m_direction;
+    if (m_t > 1.0f || m_t < 0.0f)
+    {
+        m_direction *= -1.0f; // Reverse direction
+        m_t = std::clamp(m_t, 0.0f, 1.0f); // Clamp the value to prevent overshooting
+    }
+
+    DirectX::XMVECTOR currentPos = DirectX::XMVectorLerp(
+        DirectX::XMLoadFloat3(&m_startPos),
+        DirectX::XMLoadFloat3(&m_endPos),
+        m_t
+    );
+
+    DirectX::XMMATRIX translationMatrix =
+    DirectX::XMMatrixTranslationFromVector(currentPos);
+
+    DirectX::XMVECTOR currentRot = DirectX::XMQuaternionSlerp(
+        DirectX::XMLoadFloat4(&m_startRot),
+        DirectX::XMLoadFloat4(&m_endRot),
+        m_t
+    );
+
+    //---------------------------------------------------------------------------------rotation
+    DirectX::XMMATRIX rotationMatrix =
+    DirectX::XMMatrixRotationQuaternion(currentRot);
+    // Combine with our previous translation and apply it
+    DirectX::XMMATRIX finalMatrix = rotationMatrix * translationMatrix;
+    m_sceneobject.GetRootNode(0)->SetMatrix(finalMatrix);
 
 }
