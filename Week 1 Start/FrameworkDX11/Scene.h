@@ -70,6 +70,7 @@ public:
 
 	IRenderingContext m_ctx;
 	SceneGraph m_sceneobject;
+	SceneGraph m_scenePlanet;
 
 	//animation section
 	DirectX::XMFLOAT3 m_startPos = { -3.0f, 0.0f, 0.0f };

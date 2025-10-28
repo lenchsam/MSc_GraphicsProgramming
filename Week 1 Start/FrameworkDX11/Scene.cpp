@@ -18,6 +18,7 @@ HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
     //bool ok = m_sceneobject.LoadSphere(m_ctx);
     //bool ok = m_sceneobject.LoadGLTF(m_ctx, L"Resources\\sphere.gltf");
     bool ok = m_sceneobject.LoadGLTF(m_ctx, L"Resources\\Box.gltf");
+    bool okPlanet = m_scenePlanet.LoadGLTF(m_ctx, L"Resources\\Box.gltf");
     //bool ok = m_sceneobject.LoadGLTF(m_ctx, L"Resources\\FlightHelmet.gltf");
     //bool ok = m_sceneobject.LoadGLTFWithSkeleton(m_ctx, L"Resources\\Fox.gltf");
 
@@ -163,40 +164,29 @@ void Scene::update(const float deltaTime)
     ID3D11Buffer* buf_albedo = m_pConstantBufferAlbedo.Get();
     m_pImmediateContext->PSSetConstantBuffers(3, 1, &buf_albedo);
 
-    // scene object 1 
-    m_sceneobject.AnimateFrame(m_ctx); // this updates the transform matrix for the object - this should be called after all transforms have been made
-    
-    m_sceneobject.RenderFrame(m_ctx, deltaTime); // renders the object
 
-	//animation update
-    //---------------------------------------------------------------------------------moving
-    m_t += deltaTime * m_direction;
-    if (m_t > 1.0f || m_t < 0.0f)
-    {
-        m_direction *= -1.0f; // Reverse direction
-        m_t = std::clamp(m_t, 0.0f, 1.0f); // Clamp the value to prevent overshooting
-    }
-
-    DirectX::XMVECTOR currentPos = DirectX::XMVectorLerp(
-        DirectX::XMLoadFloat3(&m_startPos),
-        DirectX::XMLoadFloat3(&m_endPos),
-        m_t
-    );
-
-    DirectX::XMMATRIX translationMatrix =
-    DirectX::XMMatrixTranslationFromVector(currentPos);
-
-    DirectX::XMVECTOR currentRot = DirectX::XMQuaternionSlerp(
-        DirectX::XMLoadFloat4(&m_startRot),
-        DirectX::XMLoadFloat4(&m_endRot),
-        m_t
-    );
-
-    //---------------------------------------------------------------------------------rotation
-    DirectX::XMMATRIX rotationMatrix =
-    DirectX::XMMatrixRotationQuaternion(currentRot);
-    // Combine with our previous translation and apply it
-    DirectX::XMMATRIX finalMatrix = rotationMatrix * translationMatrix;
+	//animation update transformation heirarchy
+    m_t += deltaTime;
+    DirectX::XMMATRIX finalMatrix = DirectX::XMMatrixIdentity();
     m_sceneobject.GetRootNode(0)->SetMatrix(finalMatrix);
 
+    // --- CHILD (Planet) ---
+    // 1. Create the planet's LOCAL transformation relative to the sun.
+    // It rotates on its own axis and is translated away from the sun.
+    DirectX::XMMATRIX planetRotation = DirectX::XMMatrixRotationY(m_t);
+    DirectX::XMMATRIX planetTranslation = DirectX::XMMatrixTranslation(2.0f, 0.0f, 0.0f); // Orbit distance
+    DirectX::XMMATRIX planetLocal = planetTranslation * planetRotation;
+    // 2. To get the planet's FINAL world matrix, multiply its local
+    // transform by its parent's (the sun's) world matrix.
+    DirectX::XMMATRIX worldPlanet = planetLocal * finalMatrix;
+
+    m_scenePlanet.GetRootNode(0)->SetMatrix(worldPlanet);
+
+    // scene object 1 
+    m_sceneobject.AnimateFrame(m_ctx); // this updates the transform matrix for the object - this should be called after all transforms have been made
+    m_sceneobject.RenderFrame(m_ctx, deltaTime); // renders the object
+
+    //scene object 2 (planet)
+    m_scenePlanet.AnimateFrame(m_ctx); // this updates the transform matrix for the object - this should be called after all transforms have been made
+    m_scenePlanet.RenderFrame(m_ctx, deltaTime); // renders the object
 }
