@@ -24,6 +24,7 @@
 #include "scenegraph.h"
 
 class DX11Renderer;
+class Animation;
 
 class Scene
 {
@@ -70,13 +71,15 @@ public:
 
 	IRenderingContext m_ctx;
 	SceneGraph m_sceneobject;
-	SceneGraph m_scenePlanet;
+	SceneGraph m_sceneSphere;
 
 	//animation section
 	DirectX::XMFLOAT3 m_startPos = { -3.0f, 0.0f, 0.0f };
 	DirectX::XMFLOAT3 m_endPos = { 3.0f, 0.0f, 0.0f };
 	float m_t = 0.0f;
 	float m_direction = 1.0f;
+
+	Animation m_myAnimation;
 
 private:
 	ID3D11ShaderResourceView* m_pTextureDiffuse;
