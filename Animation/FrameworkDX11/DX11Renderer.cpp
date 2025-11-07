@@ -511,6 +511,34 @@ void DX11Renderer::startIMGUIDraw(const unsigned int FPS)
     ImGui::SetWindowFontScale(1.0f);
     ImGui::Spacing();
 
+    if (ImGui::TreeNode("Hierarchy lines")) {
+        static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_DefaultOpen;
+        if (ImGui::TreeNodeEx("Parent", base_flags))
+        {
+            if (ImGui::TreeNodeEx("Child 1", base_flags))
+            {
+                static int clicked = 0;
+                if(ImGui::Button("Button for Child 1"))
+                    clicked++;
+                if (clicked & 1)
+                {
+                    ImGui::SameLine();
+                    ImGui::Text("Thanks for clicking me!");
+                }
+
+                ImGui::TreePop();
+            }
+            if (ImGui::TreeNodeEx("Child 2", base_flags))
+            {
+                ImGui::Button("Button for Child 2");
+                ImGui::TreePop();
+            }
+            ImGui::TreePop();
+        }
+        ImGui::TreePop();
+
+    }
+
     // example usage
     /*if (ImGui::RadioButton("Single threaded CPU", g_ttype == use_cpu_singlethread)) g_ttype = use_cpu_singlethread;
     if (ImGui::RadioButton("Multi threaded CPU", g_ttype == use_cpu_multithread)) g_ttype = use_cpu_multithread;
