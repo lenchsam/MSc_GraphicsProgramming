@@ -522,7 +522,7 @@ void DX11Renderer::startIMGUIDraw(const unsigned int FPS)
 
     ImGui::SliderFloat("Roughness", &lightProperties.rough, 0.0f, 1.0f);
 
-    ImGui::SeparatorText("Physically Based Rendering Lighting Properties");
+    ImGui::SeparatorText("Image Based Lighting");
 
     ImGui::RadioButton("IBL Type 1", &lightProperties.IBLType, 0); ImGui::SameLine();
     ImGui::RadioButton("IBL Type 2", &lightProperties.IBLType, 1); ImGui::SameLine();

@@ -170,52 +170,52 @@ void Scene::update(const float deltaTime)
 
 
     //---------------------------------------------------------------------------------animation
-    m_t += deltaTime;
-    static float animationTimer = 0;
-    animationTimer += deltaTime;
+    //m_t += deltaTime;
+    //static float animationTimer = 0;
+    //animationTimer += deltaTime;
 
-    AnimationSampler sampler = m_myAnimation.m_samplers[0];
+    //AnimationSampler sampler = m_myAnimation.m_samplers[0];
 
-    // Hint - we need a next and a previous keyframe to interpolate between.
-    int nextKeyframe = -1;
-    for (int i = 0; i < sampler.timestamps.size(); ++i)
-    {
-        if (sampler.timestamps[i] > animationTimer)
-        {
-            nextKeyframe = i;
-            break;
-        }
-    }
-    // Handle edge cases
-    if (nextKeyframe == -1 || nextKeyframe == 0)
-    {
-        /* nextKeyframe = -1 Time is after the last keyframe */
-        /* nextKeyframe = 0 Time is before the last keyframe */
-        nextKeyframe = 1;
-    }
+    //// Hint - we need a next and a previous keyframe to interpolate between.
+    //int nextKeyframe = -1;
+    //for (int i = 0; i < sampler.timestamps.size(); ++i)
+    //{
+    //    if (sampler.timestamps[i] > animationTimer)
+    //    {
+    //        nextKeyframe = i;
+    //        break;
+    //    }
+    //}
+    //// Handle edge cases
+    //if (nextKeyframe == -1 || nextKeyframe == 0)
+    //{
+    //    /* nextKeyframe = -1 Time is after the last keyframe */
+    //    /* nextKeyframe = 0 Time is before the last keyframe */
+    //    nextKeyframe = 1;
+    //}
 
-    // this code should be guarded with checks!
-    int prevKeyframe = nextKeyframe - 1;
-    float prevTime = sampler.timestamps[prevKeyframe];
-    float nextTime = sampler.timestamps[nextKeyframe];
+    //// this code should be guarded with checks!
+    //int prevKeyframe = nextKeyframe - 1;
+    //float prevTime = sampler.timestamps[prevKeyframe];
+    //float nextTime = sampler.timestamps[nextKeyframe];
 
-    // Calculate the progress between these two timestamps
-    float t = (animationTimer - prevTime) / (nextTime - prevTime); // e.g.(1.2 - 0.0) / (2.0 - 0.0) = 0.6
+    //// Calculate the progress between these two timestamps
+    //float t = (animationTimer - prevTime) / (nextTime - prevTime); // e.g.(1.2 - 0.0) / (2.0 - 0.0) = 0.6
 
-    if (animationTimer >= nextTime)
-        animationTimer = 0;
+    //if (animationTimer >= nextTime)
+    //    animationTimer = 0;
 
-    DirectX::XMVECTOR prevValue = DirectX::XMLoadFloat3(&sampler.vec3_values[prevKeyframe]);
-    DirectX::XMVECTOR nextValue = DirectX::XMLoadFloat3(&sampler.vec3_values[nextKeyframe]);
-    DirectX::XMVECTOR finalValue = DirectX::XMVectorLerp(prevValue, nextValue,t);
-    DirectX::XMMATRIX translationMatrix2 = DirectX::XMMatrixTranslationFromVector(finalValue);
-    m_sceneSphere.GetRootNode(0)->SetMatrix(translationMatrix2);
+    //DirectX::XMVECTOR prevValue = DirectX::XMLoadFloat3(&sampler.vec3_values[prevKeyframe]);
+    //DirectX::XMVECTOR nextValue = DirectX::XMLoadFloat3(&sampler.vec3_values[nextKeyframe]);
+    //DirectX::XMVECTOR finalValue = DirectX::XMVectorLerp(prevValue, nextValue,t);
+    //DirectX::XMMATRIX translationMatrix2 = DirectX::XMMatrixTranslationFromVector(finalValue);
+    //m_sceneSphere.GetRootNode(0)->SetMatrix(translationMatrix2);
 
-    // scene object 1 
-    m_sceneobject.AnimateFrame(m_ctx); // this updates the transform matrix for the object - this should be called after all transforms have been made
-    m_sceneobject.RenderFrame(m_ctx, deltaTime); // renders the object
+ //   // scene object 1 
+ //   m_sceneobject.AnimateFrame(m_ctx); // this updates the transform matrix for the object - this should be called after all transforms have been made
+ //   m_sceneobject.RenderFrame(m_ctx, deltaTime); // renders the object
 
-    // scene object 2
-	m_sceneSphere.AnimateFrame(m_ctx); // this updates the transform matrix for the object - this should be called after all transforms have been made
+ //   // scene object 2
+	//m_sceneSphere.AnimateFrame(m_ctx); // this updates the transform matrix for the object - this should be called after all transforms have been made
 	m_sceneSphere.RenderFrame(m_ctx, deltaTime); // renders the object
 }
