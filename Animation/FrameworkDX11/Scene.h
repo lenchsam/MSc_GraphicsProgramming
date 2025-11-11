@@ -41,6 +41,9 @@ public:
 	
 	const LightPropertiesConstantBuffer& getLightProperties() { return m_lightProperties; }
 
+	void CreateWaveAnimationSampler(int nodeIndex, Animation* anim);
+	Animation CreateWaveAnimation();
+
 private:
 	void setupLightProperties();
 
@@ -58,6 +61,10 @@ public:
 	IRenderingContext m_ctx;
 	SceneGraph m_sceneobject;
 
+	Skeleton m_robotArmSkeleton;
+	std::vector<SceneNode*> m_armSegmentNodes;
+	std::vector<Animation*> m_robotArmAnimations;
+
 
 private:
 	ID3D11ShaderResourceView* m_pTextureDiffuse;
@@ -67,6 +74,7 @@ private:
 	ID3D11ShaderResourceView* m_pTextureAmbientOcclusion;
 	ID3D11ShaderResourceView* m_pTextureSpecularIBL;
 	ID3D11ShaderResourceView* m_pTextureDiffuseIBL;
+
 
 	ID3D11SamplerState* m_pSamplerLinear;
 };
