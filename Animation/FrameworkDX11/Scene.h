@@ -42,7 +42,8 @@ public:
 	const LightPropertiesConstantBuffer& getLightProperties() { return m_lightProperties; }
 
 	void CreateWaveAnimationSampler(int nodeIndex, Animation* anim);
-	Animation CreateWaveAnimation();
+	void CreateWaveAnimationSamplerForPreSkin(int nodeIndex, Animation* anim, Skeleton* skeleton);
+	Animation CreateWaveAnimation(Skeleton* s);
 
 private:
 	void setupLightProperties();

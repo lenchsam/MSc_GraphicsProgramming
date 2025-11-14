@@ -54,6 +54,7 @@ public:
     Joint* GetJoint(unsigned int joint) {
         return &m_joints[joint];
     }
+    void AddAnimation(Animation* animation);
 
 private:
     // Change the signature to accept a pointer.

@@ -7,6 +7,7 @@ cbuffer ConstantBuffer : register( b0 )
 	matrix View;
 	matrix Projection;
 	float4 vOutputColor;
+    float4x4 g_boneTransforms[100];
 }
 
 Texture2D albedoMap : register(t0);
@@ -142,14 +143,44 @@ LightingResult ComputeLighting(float4 pixelToLightVectorNormalised, float4 pixel
 //--------------------------------------------------------------------------------------
 PS_INPUT VS( VS_INPUT input )
 {
+    float4 skinnedPos = float4 (0, 0, 0, 0);
+    float3 skinnedNorm = float3 (0, 0, 0);
+	
+    int indexX = input.Joints.x;
+    float4x4 jointXMatrix = g_boneTransforms[indexX];
+    float jointXWeight = input.Weights.x;
+    skinnedPos += mul(input.Pos, jointXMatrix) * jointXWeight;
+	
+    int indexY = input.Joints.y;
+    float4x4 jointYMatrix = g_boneTransforms[indexY];
+    float jointYWeight = input.Weights.y;
+    skinnedPos += mul(input.Pos, jointYMatrix) * jointYWeight;
+	
+    int indexZ = input.Joints.z;
+    float4x4 jointZMatrix = g_boneTransforms[indexZ];
+    float jointZWeight = input.Weights.z;
+    skinnedPos += mul(input.Pos, jointZMatrix) * jointZWeight;
+	
+    int indexW = input.Joints.w;
+    float4x4 jointWMatrix = g_boneTransforms[indexW];
+    float jointWWeight = input.Weights.w;
+    skinnedPos += mul(input.Pos, jointWMatrix) * jointWWeight;
+	
+    skinnedPos.w = 1.0f;
+	
+	//vertex normals 
+    int normIndexX = input.Norm.x;
+	
+    skinnedNorm += mul(float4(input.Norm, 0), g_boneTransforms[normIndexX]).xyz * jointXWeight;
+	
     PS_INPUT output = (PS_INPUT)0;
-    output.Pos = mul( input.Pos, World );
+    output.Pos = mul( skinnedPos, World);
 	output.worldPos = output.Pos;
     output.Pos = mul( output.Pos, View );
     output.Pos = mul( output.Pos, Projection );
 
 	// multiply the normal by the world transform (to go from model space to world space)
-	output.Norm = mul(float4(input.Norm, 0), World).xyz;
+    output.Norm = mul(float4(skinnedNorm, 0), World).xyz;
 
 	output.Tex = input.Tex;
     

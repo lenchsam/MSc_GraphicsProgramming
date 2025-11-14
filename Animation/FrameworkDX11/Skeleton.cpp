@@ -48,6 +48,12 @@ int Skeleton::AddJoint(int parentIndex, const DirectX::XMFLOAT4X4& localBindTran
     return newJointIndex;
 }
 
+void Skeleton::AddAnimation(Animation* animation)
+{
+    m_animations.push_back(*animation);
+    m_animationCount = m_animations.size();
+}
+
 
 // Helper function to get a node's local transform.
 // This avoids code duplication.
