@@ -136,45 +136,40 @@ void Scene::setupLightProperties()
 
 void Scene::update(const float deltaTime)
 {
-
     Skeleton* s = m_sceneobject.GetRootNode(0)->GetSkeleton();
 
-    // -- - 1. Select and Play Animation-- -
-    // (Here you could use keyboard input or ImGui to choose an animationfrom your vector)
-    static bool doOnce = true;
-    if (doOnce)
+    if (s)
     {
-        doOnce = false;
-        if (s->GetBoneCount() > 0) {
-            s->PlayAnimation(s->CurrentAnimation());
+        static bool doOnce = true;
+        if (doOnce)
+        {
+            doOnce = false;
+            if (s->CurrentAnimation()) {
+                s->PlayAnimation(s->CurrentAnimation());
+            }
         }
-    }
-    // --- 2. Update the Skeleton's Pose ---
-    // This function now reads from the Animation object and updates all joint poses.
-    s->Update(deltaTime);
-    // --- 3. Sync Visible Nodes with Skeleton (This logic is crucial) ---
-    // This copies the final world matrix of each joint to its visiblesphere.
-    for (int i = 0; i < s->GetBoneCount(); ++i)
-    {
-        Joint* joint = s->GetJoint(i);
-        DirectX::XMMATRIX finalWorldTransform = XMLoadFloat4x4(&joint -> finalTransform);
-        //s->SetMatrix(finalWorldTransform);
-		s->AddAnimation(joint->finalTransform);
+        s->Update(deltaTime);
     }
 
-
-
-
-    // note the pixel shader and the vertex shader have been set by the renderer class calling this method
     m_pImmediateContext->PSSetShaderResources(0, 1, &m_pTextureDiffuse);
     m_pImmediateContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
 
-
     ConstantBuffer cb1;
+
     cb1.mView = XMMatrixTranspose(getCamera()->getViewMatrix());
     cb1.mProjection = XMMatrixTranspose(getCamera()->getProjectionMatrix());
+
+    DirectX::XMMATRIX worldMat = m_sceneobject.GetRootNode(0)->GetWorldMtrx();
+    cb1.mWorld = XMMatrixTranspose(worldMat);
+
     cb1.vOutputColor = XMFLOAT4(0, 0, 0, 0);
 
+    if (s)
+    {
+        s->GetSkinningMatrices(cb1.boneTransforms, 100);
+    }
+
+    m_pImmediateContext->UpdateSubresource(m_pConstantBuffer.Get(), 0, nullptr, &cb1, 0, 0);
 
     m_lightProperties.EyePosition = XMFLOAT4(m_pCamera->getPosition().x, m_pCamera->getPosition().y, m_pCamera->getPosition().z, 1);
 
@@ -182,11 +177,9 @@ void Scene::update(const float deltaTime)
     ID3D11Buffer* buf = m_pLightConstantBuffer.Get();
     m_pImmediateContext->PSSetConstantBuffers(1, 1, &buf);
 
-    // scene object 1 
-    m_sceneobject.AnimateFrame(m_ctx); // this updates the transform matrix for the object - this should be called after all transforms have been made
-    
-    m_sceneobject.RenderFrame(m_ctx, deltaTime); // renders the object
+    m_sceneobject.AnimateFrame(m_ctx);
 
+    m_sceneobject.RenderFrame(m_ctx, deltaTime);
 }
 
 Animation Scene::CreateWaveAnimation(Skeleton* s) {
@@ -194,7 +187,10 @@ Animation Scene::CreateWaveAnimation(Skeleton* s) {
     anim.m_name = "waveHand_Simple";
 
     CreateWaveAnimationSamplerForPreSkin(1, &anim, s);
-	s->AddAnimation(&anim);
+
+    s->AddAnimation(&anim);
+
+    s->PlayAnimation(s->GetAnimationCount() - 1);;
 
     return anim;
 }
@@ -241,36 +237,38 @@ DirectX::XMFLOAT3 BakeScaleOntoBindPose(const DirectX::XMMATRIX& bindPose, const
 }
 
 void Scene::CreateWaveAnimationSamplerForPreSkin(int nodeIndex, Animation* anim, Skeleton* skeleton) {
-    // Samplers for the hand's translation and rotation.
     AnimationSampler nodeTranslationSampler, nodeRotationSampler;
-    // Get the hand's structural bind pose.
+
     DirectX::XMMATRIX nodeBindPose = DirectX::XMLoadFloat4x4(&skeleton->GetJoint(nodeIndex)->localBindTransform);
-    // --- Keyframe 1: The Start Pose (t = 0.0s) ---
-    // The hand is in its default, non-animated state.
-    XMFLOAT3 startPos = BakeTranslationOntoBindPose(nodeBindPose, { 0.0f, 0.0f, 0.0f });
+
+    XMFLOAT3 constantPos = BakeTranslationOntoBindPose(nodeBindPose, { 0.0f, 0.0f, 0.0f });
+
     nodeTranslationSampler.timestamps.push_back(0.0f);
-    nodeTranslationSampler.vec3_values.push_back(startPos);
-    XMFLOAT4 startRot = BakeRotationOntoBindPose(nodeBindPose, { 0, 0, 1 }, 0.0f); // No rotation
+    nodeTranslationSampler.vec3_values.push_back(constantPos);
+
+    XMFLOAT4 startRot = BakeRotationOntoBindPose(nodeBindPose, { 1, 0, 0 }, 0.0f);
     nodeRotationSampler.timestamps.push_back(0.0f);
     nodeRotationSampler.vec4_values.push_back(startRot);
-    // --- Keyframe 2: The End Pose (t = 2.0s) ---
-    // The hand is translated up and rotated 90 degrees to the side.
-    XMFLOAT3 endPos = BakeTranslationOntoBindPose(nodeBindPose, { 0.0f, 2.0f, 0.0f }); // Move up slightly
+
     nodeTranslationSampler.timestamps.push_back(2.0f);
-    nodeTranslationSampler.vec3_values.push_back(endPos);
-    XMFLOAT4 endRot = BakeRotationOntoBindPose(nodeBindPose, { 0, 0, 1 }, DirectX::XM_PIDIV2); // Rotate 90 degrees
+    nodeTranslationSampler.vec3_values.push_back(constantPos);
+
+    XMFLOAT4 endRot = BakeRotationOntoBindPose(nodeBindPose, { 1, 0, 0 }, DirectX::XM_PIDIV4);
     nodeRotationSampler.timestamps.push_back(2.0f);
     nodeRotationSampler.vec4_values.push_back(endRot);
-    // --- Add Samplers and Channels for the node ---
-    anim->m_samplers.push_back(nodeTranslationSampler); // Sampler x
+
+    anim->m_samplers.push_back(nodeTranslationSampler);
     int nodeTranslationSamplerIndex = anim->m_samplers.size() - 1;
-    anim->m_samplers.push_back(nodeRotationSampler); // Sampler x+1
+
+    anim->m_samplers.push_back(nodeRotationSampler);
     int nodeRotationSamplerIndex = anim->m_samplers.size() - 1;
+
     AnimationChannel transChannel;
     transChannel.path = AnimationChannel::TRANSLATION;
     transChannel.samplerIndex = nodeTranslationSamplerIndex;
     transChannel.jointIndex = nodeIndex;
     anim->m_channels.push_back(transChannel);
+
     AnimationChannel rotChannel;
     rotChannel.path = AnimationChannel::ROTATION;
     rotChannel.samplerIndex = nodeRotationSamplerIndex;

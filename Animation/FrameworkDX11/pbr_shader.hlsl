@@ -139,13 +139,13 @@ LightingResult ComputeLighting(float4 pixelToLightVectorNormalised, float4 pixel
 }
 
 //--------------------------------------------------------------------------------------
-// Vertex Shader
+// Vertex Shader (VS)
 //--------------------------------------------------------------------------------------
-PS_INPUT VS( VS_INPUT input )
+PS_INPUT VS(VS_INPUT input)
 {
-    float4 skinnedPos = float4 (0, 0, 0, 0);
-    float3 skinnedNorm = float3 (0, 0, 0);
-	
+    float4 skinnedPos = float4(0, 0, 0, 0);
+    float3 skinnedNorm = float3(0, 0, 0);
+
     int indexX = input.Joints.x;
     float4x4 jointXMatrix = g_boneTransforms[indexX];
     float jointXWeight = input.Weights.x;
@@ -167,22 +167,27 @@ PS_INPUT VS( VS_INPUT input )
     skinnedPos += mul(input.Pos, jointWMatrix) * jointWWeight;
 	
     skinnedPos.w = 1.0f;
+    
+    // Joint X
+    skinnedNorm += mul(input.Norm, (float3x3) jointXMatrix) * jointXWeight;
+    // Joint Y
+    skinnedNorm += mul(input.Norm, (float3x3) jointYMatrix) * jointYWeight;
+    // Joint Z
+    skinnedNorm += mul(input.Norm, (float3x3) jointZMatrix) * jointZWeight;
+    // Joint W
+    skinnedNorm += mul(input.Norm, (float3x3) jointWMatrix) * jointWWeight;
 	
-	//vertex normals 
-    int normIndexX = input.Norm.x;
-	
-    skinnedNorm += mul(float4(input.Norm, 0), g_boneTransforms[normIndexX]).xyz * jointXWeight;
-	
-    PS_INPUT output = (PS_INPUT)0;
-    output.Pos = mul( skinnedPos, World);
-	output.worldPos = output.Pos;
-    output.Pos = mul( output.Pos, View );
-    output.Pos = mul( output.Pos, Projection );
+    PS_INPUT output = (PS_INPUT) 0;
+    
+    output.Pos = mul(skinnedPos, World);
+    output.worldPos = output.Pos;
+    output.Pos = mul(output.Pos, View);
+    output.Pos = mul(output.Pos, Projection);
 
-	// multiply the normal by the world transform (to go from model space to world space)
     output.Norm = mul(float4(skinnedNorm, 0), World).xyz;
+    output.Norm = normalize(output.Norm);
 
-	output.Tex = input.Tex;
+    output.Tex = input.Tex;
     
     return output;
 }
