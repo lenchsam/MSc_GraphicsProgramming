@@ -61,6 +61,7 @@ public:
 	LightPropertiesConstantBuffer m_lightProperties;
 	IRenderingContext m_ctx;
 	SceneGraph m_sceneobject;
+	SceneGraph m_foxobject;
 
 	Skeleton m_robotArmSkeleton;
 	std::vector<SceneNode*> m_armSegmentNodes;

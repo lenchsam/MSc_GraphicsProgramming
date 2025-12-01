@@ -20,7 +20,7 @@ HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
     //bool ok = m_sceneobject.LoadSphere(m_ctx);
     //bool ok = m_sceneobject.LoadGLTF(m_ctx, L"Resources\\sphere.gltf");
     //bool ok = m_sceneobject.LoadGLTF(m_ctx, L"Resources\\FlightHelmet.gltf");
-    //bool ok = m_sceneobject.LoadGLTFWithSkeleton(m_ctx, L"Resources\\Fox.gltf");
+    bool okFox = m_foxobject.LoadGLTFWithSkeleton(m_ctx, L"Resources\\Fox.gltf");
     bool ok = m_sceneobject.LoadGLTFWithSkeleton(m_ctx, L"Resources\\simplerig.gltf");
 
     Skeleton* s = m_sceneobject.GetRootNode(0)->GetSkeleton();
@@ -137,6 +137,7 @@ void Scene::setupLightProperties()
 void Scene::update(const float deltaTime)
 {
     Skeleton* s = m_sceneobject.GetRootNode(0)->GetSkeleton();
+    Skeleton* sFox = m_foxobject.GetRootNode(0)->GetSkeleton();
 
     if (s)
     {
@@ -147,9 +148,41 @@ void Scene::update(const float deltaTime)
             if (s->CurrentAnimation()) {
                 s->PlayAnimation(s->CurrentAnimation());
             }
+            sFox->PlayAnimation(static_cast<unsigned int>(2));
         }
         s->Update(deltaTime);
+		//sFox->Update(deltaTime);
     }
+
+
+	//moving fox in circle
+    static float currentAngle = 0.0f;
+	float radius = 5.0f;     //radius of the circle
+    float speed = 1.5f;      //fox movement speed
+
+    currentAngle += speed * deltaTime;
+
+    if (currentAngle > DirectX::XM_2PI) {
+        currentAngle -= DirectX::XM_2PI;
+    }
+
+    float x = radius * sin(currentAngle); 
+    float z = radius * cos(currentAngle);
+
+    //calculate rotation
+    float rotationY = currentAngle + DirectX::XM_PIDIV2;
+
+	//calulate matrices
+    DirectX::XMMATRIX mTranslate = DirectX::XMMatrixTranslation(x, 0, z);
+    DirectX::XMMATRIX mRotate = DirectX::XMMatrixRotationY(rotationY);
+    
+    DirectX::XMMATRIX worldMatrix = mRotate * mTranslate;
+
+    m_foxobject.GetRootNode(0)->SetMatrix(worldMatrix);
+
+
+
+
 
     m_pImmediateContext->PSSetShaderResources(0, 1, &m_pTextureDiffuse);
     m_pImmediateContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
@@ -177,9 +210,11 @@ void Scene::update(const float deltaTime)
     ID3D11Buffer* buf = m_pLightConstantBuffer.Get();
     m_pImmediateContext->PSSetConstantBuffers(1, 1, &buf);
 
-    m_sceneobject.AnimateFrame(m_ctx);
+    //m_sceneobject.AnimateFrame(m_ctx);
+    //m_sceneobject.RenderFrame(m_ctx, deltaTime);
 
-    m_sceneobject.RenderFrame(m_ctx, deltaTime);
+	m_foxobject.AnimateFrame(m_ctx);
+	m_foxobject.RenderFrame(m_ctx, deltaTime);
 }
 
 Animation Scene::CreateWaveAnimation(Skeleton* s) {
