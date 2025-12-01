@@ -504,13 +504,18 @@ void DX11Renderer::startIMGUIDraw(const unsigned int FPS)
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-    // YOU will want to modify this for your own debug, controls etc - comment it out to hide the window
-    //ImGui::ShowMetricsWindow();
-    ImGui::SetWindowFontScale(4.0f);
     ImGui::Text("FPS %d", FPS);
     ImGui::SetWindowFontScale(1.0f);
     ImGui::Spacing();
 
+    //number of foxes
+    ImGui::Separator();
+    ImGui::Text("Number of Foxes");
+
+    ImGui::SliderInt("Fox Count", &m_pScene->m_numFoxes, 1, 10);
+
+    ImGui::Separator();
+	//heirarchy
     if (ImGui::TreeNode("Hierarchy lines")) {
         static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_DefaultOpen;
         if (ImGui::TreeNodeEx("Parent", base_flags))

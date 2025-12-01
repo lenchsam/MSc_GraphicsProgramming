@@ -67,6 +67,9 @@ public:
 	std::vector<SceneNode*> m_armSegmentNodes;
 	std::vector<Animation*> m_robotArmAnimations;
 
+	//ImGui controllable parameters
+	int m_numFoxes = 3;
+
 
 private:
 	ID3D11ShaderResourceView* m_pTextureDiffuse;

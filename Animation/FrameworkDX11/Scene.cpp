@@ -165,12 +165,11 @@ void Scene::update(const float deltaTime)
 
 
     //TODO: Make ImGui control number of foxes
-    int numFoxes = 3;
-    float angleSpacing = DirectX::XM_2PI / numFoxes;
+    float angleSpacing = DirectX::XM_2PI / m_numFoxes;
 
     ConstantBuffer cb1;
 
-    for (int i = 0; i < numFoxes; ++i)
+    for (int i = 0; i < m_numFoxes; ++i)
     {
         float instanceAngle = currentAngle + (i * angleSpacing);
 
@@ -205,7 +204,7 @@ void Scene::update(const float deltaTime)
         m_pImmediateContext->PSSetConstantBuffers(1, 1, &buf);
 
         m_foxobject.AnimateFrame(m_ctx);
-        m_foxobject.RenderFrame(m_ctx, deltaTime / numFoxes);
+        m_foxobject.RenderFrame(m_ctx, deltaTime / m_numFoxes);
     }
 
    
