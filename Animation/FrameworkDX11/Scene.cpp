@@ -151,70 +151,67 @@ void Scene::update(const float deltaTime)
             sFox->PlayAnimation(static_cast<unsigned int>(2));
         }
         s->Update(deltaTime);
-		//sFox->Update(deltaTime);
     }
 
 
 	//moving fox in circle
     static float currentAngle = 0.0f;
 	float radius = 5.0f;     //radius of the circle
-    float speed = 1.5f;      //fox movement speed
+    float speed = 0.8f;      //fox movement speed
 
+    // Update the main timer once per frame
     currentAngle += speed * deltaTime;
-
-    if (currentAngle > DirectX::XM_2PI) {
-        currentAngle -= DirectX::XM_2PI;
-    }
-
-    float x = radius * sin(currentAngle); 
-    float z = radius * cos(currentAngle);
-
-    //calculate rotation
-    float rotationY = currentAngle + DirectX::XM_PIDIV2;
-
-	//calulate matrices
-    DirectX::XMMATRIX mTranslate = DirectX::XMMatrixTranslation(x, 0, z);
-    DirectX::XMMATRIX mRotate = DirectX::XMMatrixRotationY(rotationY);
-    
-    DirectX::XMMATRIX worldMatrix = mRotate * mTranslate;
-
-    m_foxobject.GetRootNode(0)->SetMatrix(worldMatrix);
+    if (currentAngle > DirectX::XM_2PI) currentAngle -= DirectX::XM_2PI;
 
 
-
-
-
-    m_pImmediateContext->PSSetShaderResources(0, 1, &m_pTextureDiffuse);
-    m_pImmediateContext->PSSetSamplers(0, 1, &m_pSamplerLinear);
+    //TODO: Make ImGui control number of foxes
+    int numFoxes = 3;
+    float angleSpacing = DirectX::XM_2PI / numFoxes;
 
     ConstantBuffer cb1;
 
-    cb1.mView = XMMatrixTranspose(getCamera()->getViewMatrix());
-    cb1.mProjection = XMMatrixTranspose(getCamera()->getProjectionMatrix());
-
-    DirectX::XMMATRIX worldMat = m_sceneobject.GetRootNode(0)->GetWorldMtrx();
-    cb1.mWorld = XMMatrixTranspose(worldMat);
-
-    cb1.vOutputColor = XMFLOAT4(0, 0, 0, 0);
-
-    if (s)
+    for (int i = 0; i < numFoxes; ++i)
     {
-        s->GetSkinningMatrices(cb1.boneTransforms, 100);
+        float instanceAngle = currentAngle + (i * angleSpacing);
+
+        float x = radius * sin(instanceAngle);
+        float z = radius * cos(instanceAngle);
+
+        float rotationY = instanceAngle + DirectX::XM_PIDIV2;
+
+        DirectX::XMMatrixRotationY(rotationY);
+        DirectX::XMMATRIX mRotate = DirectX::XMMatrixRotationY(rotationY);
+        DirectX::XMMATRIX mTranslate = DirectX::XMMatrixTranslation(x, 0, z);
+
+        DirectX::XMMATRIX worldMatrix = mRotate * mTranslate;
+        m_foxobject.GetRootNode(0)->SetMatrix(worldMatrix);
+
+
+        //rendering
+        cb1.mView = XMMatrixTranspose(getCamera()->getViewMatrix());
+        cb1.mProjection = XMMatrixTranspose(getCamera()->getProjectionMatrix());
+
+        cb1.mWorld = XMMatrixTranspose(m_foxobject.GetRootNode(0)->GetWorldMtrx());
+        cb1.vOutputColor = XMFLOAT4(0, 0, 0, 0);
+
+        if (sFox) {
+            sFox->GetSkinningMatrices(cb1.boneTransforms, 100);
+        }
+
+        m_pImmediateContext->UpdateSubresource(m_pLightConstantBuffer.Get(), 0, nullptr, &m_lightProperties, 0, 0);
+
+        m_pImmediateContext->PSSetShaderResources(0, 1, &m_pTextureDiffuse);
+        ID3D11Buffer* buf = m_pLightConstantBuffer.Get();
+        m_pImmediateContext->PSSetConstantBuffers(1, 1, &buf);
+
+        m_foxobject.AnimateFrame(m_ctx);
+        m_foxobject.RenderFrame(m_ctx, deltaTime / numFoxes);
     }
 
-    m_pImmediateContext->UpdateSubresource(m_pConstantBuffer.Get(), 0, nullptr, &cb1, 0, 0);
-
-    m_lightProperties.EyePosition = XMFLOAT4(m_pCamera->getPosition().x, m_pCamera->getPosition().y, m_pCamera->getPosition().z, 1);
-
-    m_pImmediateContext->UpdateSubresource(m_pLightConstantBuffer.Get(), 0, nullptr, &m_lightProperties, 0, 0);
-    ID3D11Buffer* buf = m_pLightConstantBuffer.Get();
-    m_pImmediateContext->PSSetConstantBuffers(1, 1, &buf);
+   
 
     //m_sceneobject.AnimateFrame(m_ctx);
     //m_sceneobject.RenderFrame(m_ctx, deltaTime);
-
-	m_foxobject.AnimateFrame(m_ctx);
-	m_foxobject.RenderFrame(m_ctx, deltaTime);
 }
 
 Animation Scene::CreateWaveAnimation(Skeleton* s) {
