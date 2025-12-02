@@ -54,6 +54,20 @@ void Skeleton::AddAnimation(Animation* animation)
     m_animationCount = m_animations.size();
 }
 
+void Skeleton::SetBlend(int animA, int animB, float alpha)
+{
+    m_animIndexA = animA;
+    m_animIndexB = animB;
+    m_blendAlpha = alpha;
+
+    if (m_blendAlpha < 0.0f) m_blendAlpha = 0.0f;
+    if (m_blendAlpha > 1.0f) m_blendAlpha = 1.0f;
+
+    if (m_animIndexA >= 0 && m_animIndexA < m_animations.size()) {
+        m_pCurrentAnimation = &m_animations[m_animIndexA];
+    }
+}
+
 
 // Helper function to get a node's local transform.
 // This avoids code duplication.
@@ -180,16 +194,38 @@ void Skeleton::Update(float deltaTime)
 
     if (m_pCurrentAnimation)
     {
-        m_currentAnimationTime += deltaTime;
+        float durationA = 0.0f;
+        float durationB = 0.0f;
 
-        if (m_currentAnimationTime >= m_pCurrentAnimation->GetEndTime())
-            m_currentAnimationTime = m_pCurrentAnimation->GetStartTime();
-    }
+        if (m_animIndexA >= 0) {
+            durationA = m_animations[m_animIndexA].GetEndTime() - m_animations[m_animIndexA].GetStartTime();
+        }
+        else if (m_pCurrentAnimation) {
+            durationA = m_pCurrentAnimation->GetEndTime() - m_pCurrentAnimation->GetStartTime();
+        }
+
+        if (m_animIndexB >= 0) {
+            durationB = m_animations[m_animIndexB].GetEndTime() - m_animations[m_animIndexB].GetStartTime();
+        }
+        else {
+            durationB = durationA;
+        }
 
     //m_currentAnimationTime = 0.5f; // useful for testing
+        float currentDuration = (durationA * (1.0f - m_blendAlpha)) + (durationB * m_blendAlpha);
+
+        if (currentDuration < 0.001f) currentDuration = 1.0f;
+
+        m_globalPhase += deltaTime / currentDuration;
+
+        m_globalPhase = fmod(m_globalPhase, 1.0f);
+        if (m_globalPhase < 0.0f) m_globalPhase += 1.0f;
+
+        m_currentAnimationTime = m_globalPhase * currentDuration;
+    }
 
     for (int rootIndex : m_rootJointIndices) {
-        UpdateJointTransform(rootIndex, m_pCurrentAnimation, m_currentAnimationTime, DirectX::XMMatrixIdentity());
+        UpdateJointTransform(rootIndex, m_pCurrentAnimation, m_globalPhase, DirectX::XMMatrixIdentity());
     }
     for (size_t i = 0; i < m_joints.size(); ++i) {
         XMMATRIX inv = XMLoadFloat4x4(&m_joints[i].inverseBindMatrix);
@@ -272,18 +308,104 @@ DirectX::XMMATRIX GetLocalAnimatedMatrixForJoint(
 
 
 
-void Skeleton::UpdateJointTransform(int jointIndex, const Animation* anim, float time, const DirectX::XMMATRIX& parentTransform)
+void Skeleton::GetAnimTRS(int jointIndex, const Animation* anim, float time, DirectX::XMVECTOR& outScale, DirectX::XMVECTOR& outRot, DirectX::XMVECTOR& outTrans)
 {
+    Joint& joint = m_joints[jointIndex];
+
+    DirectX::XMMatrixDecompose(&outScale, &outRot, &outTrans, DirectX::XMLoadFloat4x4(&joint.localBindTransform));
+
+    if (!anim) return;
+
+    //itterate and apply channels
+    for (const auto& channel : anim->m_channels)
+    {
+        if (channel.jointIndex != jointIndex) continue;
+
+        const AnimationSampler& sampler = anim->m_samplers[channel.samplerIndex];
+
+		// get keyframes
+        size_t prevFrame = 0;
+        auto it = std::upper_bound(sampler.timestamps.begin(), sampler.timestamps.end(), time);
+        if (it != sampler.timestamps.begin()) {
+            prevFrame = std::distance(sampler.timestamps.begin(), it) - 1;
+        }
+        size_t nextFrame = std::min(prevFrame + 1, sampler.timestamps.size() - 1);
+
+        float frameDuration = sampler.timestamps[nextFrame] - sampler.timestamps[prevFrame];
+        float t = (frameDuration > 0.0f) ? ((time - sampler.timestamps[prevFrame]) / frameDuration) : 0.0f;
+
+
+        if (channel.path == AnimationChannel::TRANSLATION) {
+            DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&sampler.vec3_values[prevFrame]);
+            DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&sampler.vec3_values[nextFrame]);
+            outTrans = DirectX::XMVectorLerp(v1, v2, t);
+        }
+        else if (channel.path == AnimationChannel::ROTATION) {
+            DirectX::XMVECTOR q1 = DirectX::XMLoadFloat4(&sampler.vec4_values[prevFrame]);
+            DirectX::XMVECTOR q2 = DirectX::XMLoadFloat4(&sampler.vec4_values[nextFrame]);
+            if (DirectX::XMVectorGetX(DirectX::XMVector4Dot(q1, q2)) < 0.0f) {
+                q2 = DirectX::XMVectorNegate(q2);
+            }
+            outRot = DirectX::XMQuaternionSlerp(q1, q2, t);
+        }
+        else if (channel.path == AnimationChannel::SCALE) {
+            DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&sampler.vec3_values[prevFrame]);
+            DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&sampler.vec3_values[nextFrame]);
+            outScale = DirectX::XMVectorLerp(v1, v2, t);
+        }
+    }
+}
+void Skeleton::UpdateJointTransform(int jointIndex, const Animation* anim, float phase, const DirectX::XMMATRIX& parentTransform)
+{
+    if (jointIndex < 0 || jointIndex >= m_joints.size()) return;
+
     Joint& currentJoint = m_joints[jointIndex];
+    DirectX::XMMATRIX localMat = DirectX::XMMatrixIdentity();
 
+    //errors without this check
+    bool validBlend = (m_animIndexA >= 0 && m_animIndexA < m_animations.size()) &&
+        (m_animIndexB >= 0 && m_animIndexB < m_animations.size());
 
-    DirectX::XMMATRIX localAnimatedMatrix = GetLocalAnimatedMatrixForJoint(currentJoint, jointIndex, anim, time);
-    DirectX::XMMATRIX finalTransform = localAnimatedMatrix * parentTransform;
+    if (validBlend)
+    {
+        //anim a
+        float startA = m_animations[m_animIndexA].GetStartTime();
+        float endA = m_animations[m_animIndexA].GetEndTime();
+        float timeA = startA + (phase * (endA - startA));
 
+        DirectX::XMVECTOR sA, rA, tA;
+        GetAnimTRS(jointIndex, &m_animations[m_animIndexA], timeA, sA, rA, tA);
+
+        //anim b
+        float startB = m_animations[m_animIndexB].GetStartTime();
+        float endB = m_animations[m_animIndexB].GetEndTime();
+        float timeB = startB + (phase * (endB - startB));
+
+        DirectX::XMVECTOR sB, rB, tB;
+        GetAnimTRS(jointIndex, &m_animations[m_animIndexB], timeB, sB, rB, tB);
+
+        DirectX::XMVECTOR finalS = DirectX::XMVectorLerp(sA, sB, m_blendAlpha);
+        DirectX::XMVECTOR finalT = DirectX::XMVectorLerp(tA, tB, m_blendAlpha);
+        DirectX::XMVECTOR finalR = DirectX::XMQuaternionSlerp(rA, rB, m_blendAlpha);
+
+        localMat = DirectX::XMMatrixScalingFromVector(finalS) * DirectX::XMMatrixRotationQuaternion(finalR) * DirectX::XMMatrixTranslationFromVector(finalT);
+    }
+    else if (anim)///fallback
+    {
+        float start = anim->GetStartTime();
+        float end = anim->GetEndTime();
+        float time = start + (phase * (end - start));
+
+        DirectX::XMVECTOR s, r, t;
+        GetAnimTRS(jointIndex, anim, time, s, r, t);
+        localMat = DirectX::XMMatrixScalingFromVector(s) * DirectX::XMMatrixRotationQuaternion(r) * DirectX::XMMatrixTranslationFromVector(t);
+    }
+
+    DirectX::XMMATRIX finalTransform = localMat * parentTransform;
     XMStoreFloat4x4(&currentJoint.finalTransform, finalTransform);
 
     for (int childIndex : currentJoint.children) {
-        UpdateJointTransform(childIndex, anim, time, XMLoadFloat4x4(&currentJoint.finalTransform));
+        UpdateJointTransform(childIndex, anim, phase, finalTransform);
     }
 }
 

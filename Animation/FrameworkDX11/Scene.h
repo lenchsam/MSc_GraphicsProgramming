@@ -68,7 +68,16 @@ public:
 	std::vector<Animation*> m_robotArmAnimations;
 
 	//ImGui controllable parameters
+	//fox
 	int m_numFoxes = 3;
+	int m_foxAnimIndex = 1;
+	float m_foxAnimationSpeed = 0.5f;
+	float m_moveSpeed = 0.5f;
+
+	int m_blendAnimA = 2; //to Walk
+	int m_blendAnimB = 0; //to Run
+	float m_blendRatio = 0.5f;
+
 
 
 private:

@@ -509,10 +509,19 @@ void DX11Renderer::startIMGUIDraw(const unsigned int FPS)
     ImGui::Spacing();
 
     //number of foxes
-    ImGui::Separator();
-    ImGui::Text("Number of Foxes");
+    if (ImGui::CollapsingHeader("Fox Movement", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::SliderFloat("Move Speed", &m_pScene->m_moveSpeed, 0.0f, 1.0f);
+        ImGui::SliderInt("Fox Count", &m_pScene->m_numFoxes, 1, 10);
+    }
+    if (ImGui::CollapsingHeader("Animation Blending", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::SliderFloat("Anim Speed", &m_pScene->m_foxAnimationSpeed, 0.0f, 1.0f);
+        ImGui::Text("Blend Control");
+        ImGui::SliderFloat("Blend Ratio", &m_pScene->m_blendRatio, 0.0f, 1.0f, "%.2f");
 
-    ImGui::SliderInt("Fox Count", &m_pScene->m_numFoxes, 1, 10);
+        ImGui::Spacing();
+        ImGui::Columns(2, "blend_columns", true);
 
     ImGui::Separator();
 	//heirarchy
@@ -541,19 +550,38 @@ void DX11Renderer::startIMGUIDraw(const unsigned int FPS)
             ImGui::TreePop();
         }
         ImGui::TreePop();
+        ImGui::Text("Source A (Start)");
+        ImGui::RadioButton("Run##A", &m_pScene->m_blendAnimA, 0);
+        ImGui::RadioButton("Look##A", &m_pScene->m_blendAnimA, 1);
+        ImGui::RadioButton("Walk##A", &m_pScene->m_blendAnimA, 2);
 
+        ImGui::NextColumn();
+
+        ImGui::Text("Source B (Target)");
+        ImGui::RadioButton("Run##B", &m_pScene->m_blendAnimB, 0);
+        ImGui::RadioButton("Look##B", &m_pScene->m_blendAnimB, 1);
+        ImGui::RadioButton("Walk##B", &m_pScene->m_blendAnimB, 2);
+
+        ImGui::Columns(1);
+
+        // Debug info
+        ImGui::Separator();
+        ImGui::TextColored(ImVec4(0, 1, 0, 1), "Blend Debug Info:");
+
+        int pctA = (int)((1.0f - m_pScene->m_blendRatio) * 100);
+        int pctB = (int)(m_pScene->m_blendRatio * 100);
+
+        const char* animNames[] = { "Run", "Look", "Walk" };
+        const char* nameA = (m_pScene->m_blendAnimA >= 0 && m_pScene->m_blendAnimA < 3) ? animNames[m_pScene->m_blendAnimA] : "Unknown";
+        const char* nameB = (m_pScene->m_blendAnimB >= 0 && m_pScene->m_blendAnimB < 3) ? animNames[m_pScene->m_blendAnimB] : "Unknown";
+
+        ImGui::BulletText("Anim A (%s): %d%%", nameA, pctA);
+        ImGui::BulletText("Anim B (%s): %d%%", nameB, pctB);
     }
 
-    // example usage
-    /*if (ImGui::RadioButton("Single threaded CPU", g_ttype == use_cpu_singlethread)) g_ttype = use_cpu_singlethread;
-    if (ImGui::RadioButton("Multi threaded CPU", g_ttype == use_cpu_multithread)) g_ttype = use_cpu_multithread;
-    if (ImGui::RadioButton("GPU", g_ttype == use_gpu)) g_ttype = use_gpu;
+    ImGui::Separator();
+	//heirarchy
 
-    ImGui::Spacing();
-
-    ImGui::SliderInt("Number of Cubes", &g_cube_count, 2, max_number_of_boxes);*/
-
-    
 }
 
 void DX11Renderer::completeIMGUIDraw()

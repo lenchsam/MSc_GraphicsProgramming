@@ -56,7 +56,25 @@ public:
     }
     void AddAnimation(Animation* animation);
 
+
+
+
+    void SetBlend(int animA, int animB, float alpha);
+
 private:
+
+
+    int m_animIndexA = -1;
+    int m_animIndexB = -1;
+    float m_blendAlpha = 0.0f; // The slider value
+
+
+    //get raw value from animation
+    void GetAnimTRS(int jointIndex, const Animation* anim, float time, DirectX::XMVECTOR& outScale, DirectX::XMVECTOR& outRot, DirectX::XMVECTOR& outTrans);
+
+    float m_globalPhase = 0.0f;
+
+
     // Change the signature to accept a pointer.
     void UpdateJointTransform(int jointIndex, const Animation* anim, float time, const DirectX::XMMATRIX& parentTransform);
 

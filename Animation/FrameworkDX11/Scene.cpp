@@ -148,23 +148,26 @@ void Scene::update(const float deltaTime)
             if (s->CurrentAnimation()) {
                 s->PlayAnimation(s->CurrentAnimation());
             }
-            sFox->PlayAnimation(static_cast<unsigned int>(2));
         }
         s->Update(deltaTime);
+    }
+
+    static int lastPlayedIndex = -1;
+
+    if (sFox)
+    {
+        sFox->SetBlend(m_blendAnimA, m_blendAnimB, m_blendRatio);
+        sFox->Update(deltaTime * m_foxAnimationSpeed);
     }
 
 
 	//moving fox in circle
     static float currentAngle = 0.0f;
-	float radius = 5.0f;     //radius of the circle
-    float speed = 0.8f;      //fox movement speed
+	float radius = 5.0f;
 
-    // Update the main timer once per frame
-    currentAngle += speed * deltaTime;
+    currentAngle += m_moveSpeed * deltaTime;
     if (currentAngle > DirectX::XM_2PI) currentAngle -= DirectX::XM_2PI;
 
-
-    //TODO: Make ImGui control number of foxes
     float angleSpacing = DirectX::XM_2PI / m_numFoxes;
 
     ConstantBuffer cb1;
