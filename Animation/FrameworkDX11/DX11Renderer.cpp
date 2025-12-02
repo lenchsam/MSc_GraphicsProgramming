@@ -523,65 +523,66 @@ void DX11Renderer::startIMGUIDraw(const unsigned int FPS)
         ImGui::Spacing();
         ImGui::Columns(2, "blend_columns", true);
 
-    ImGui::Separator();
-	//heirarchy
-    if (ImGui::TreeNode("Hierarchy lines")) {
-        static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_DefaultOpen;
-        if (ImGui::TreeNodeEx("Parent", base_flags))
-        {
-            if (ImGui::TreeNodeEx("Child 1", base_flags))
+        ImGui::Separator();
+        //heirarchy
+        if (ImGui::TreeNode("Hierarchy lines")) {
+            static ImGuiTreeNodeFlags base_flags = ImGuiTreeNodeFlags_DefaultOpen;
+            if (ImGui::TreeNodeEx("Parent", base_flags))
             {
-                static int clicked = 0;
-                if(ImGui::Button("Button for Child 1"))
-                    clicked++;
-                if (clicked & 1)
+                if (ImGui::TreeNodeEx("Child 1", base_flags))
                 {
-                    ImGui::SameLine();
-                    ImGui::Text("Thanks for clicking me!");
-                }
+                    static int clicked = 0;
+                    if (ImGui::Button("Button for Child 1"))
+                        clicked++;
+                    if (clicked & 1)
+                    {
+                        ImGui::SameLine();
+                        ImGui::Text("Thanks for clicking me!");
+                    }
 
-                ImGui::TreePop();
-            }
-            if (ImGui::TreeNodeEx("Child 2", base_flags))
-            {
-                ImGui::Button("Button for Child 2");
+                    ImGui::TreePop();
+                }
+                if (ImGui::TreeNodeEx("Child 2", base_flags))
+                {
+                    ImGui::Button("Button for Child 2");
+                    ImGui::TreePop();
+                }
                 ImGui::TreePop();
             }
             ImGui::TreePop();
+            ImGui::Text("Source A (Start)");
+            ImGui::RadioButton("Run##A", &m_pScene->m_blendAnimA, 0);
+            ImGui::RadioButton("Look##A", &m_pScene->m_blendAnimA, 1);
+            ImGui::RadioButton("Walk##A", &m_pScene->m_blendAnimA, 2);
+
+            ImGui::NextColumn();
+
+            ImGui::Text("Source B (Target)");
+            ImGui::RadioButton("Run##B", &m_pScene->m_blendAnimB, 0);
+            ImGui::RadioButton("Look##B", &m_pScene->m_blendAnimB, 1);
+            ImGui::RadioButton("Walk##B", &m_pScene->m_blendAnimB, 2);
+
+            ImGui::Columns(1);
+
+            // Debug info
+            ImGui::Separator();
+            ImGui::TextColored(ImVec4(0, 1, 0, 1), "Blend Debug Info:");
+
+            int pctA = (int)((1.0f - m_pScene->m_blendRatio) * 100);
+            int pctB = (int)(m_pScene->m_blendRatio * 100);
+
+            const char* animNames[] = { "Run", "Look", "Walk" };
+            const char* nameA = (m_pScene->m_blendAnimA >= 0 && m_pScene->m_blendAnimA < 3) ? animNames[m_pScene->m_blendAnimA] : "Unknown";
+            const char* nameB = (m_pScene->m_blendAnimB >= 0 && m_pScene->m_blendAnimB < 3) ? animNames[m_pScene->m_blendAnimB] : "Unknown";
+
+            ImGui::BulletText("Anim A (%s): %d%%", nameA, pctA);
+            ImGui::BulletText("Anim B (%s): %d%%", nameB, pctB);
         }
-        ImGui::TreePop();
-        ImGui::Text("Source A (Start)");
-        ImGui::RadioButton("Run##A", &m_pScene->m_blendAnimA, 0);
-        ImGui::RadioButton("Look##A", &m_pScene->m_blendAnimA, 1);
-        ImGui::RadioButton("Walk##A", &m_pScene->m_blendAnimA, 2);
 
-        ImGui::NextColumn();
-
-        ImGui::Text("Source B (Target)");
-        ImGui::RadioButton("Run##B", &m_pScene->m_blendAnimB, 0);
-        ImGui::RadioButton("Look##B", &m_pScene->m_blendAnimB, 1);
-        ImGui::RadioButton("Walk##B", &m_pScene->m_blendAnimB, 2);
-
-        ImGui::Columns(1);
-
-        // Debug info
         ImGui::Separator();
-        ImGui::TextColored(ImVec4(0, 1, 0, 1), "Blend Debug Info:");
+        //heirarchy
 
-        int pctA = (int)((1.0f - m_pScene->m_blendRatio) * 100);
-        int pctB = (int)(m_pScene->m_blendRatio * 100);
-
-        const char* animNames[] = { "Run", "Look", "Walk" };
-        const char* nameA = (m_pScene->m_blendAnimA >= 0 && m_pScene->m_blendAnimA < 3) ? animNames[m_pScene->m_blendAnimA] : "Unknown";
-        const char* nameB = (m_pScene->m_blendAnimB >= 0 && m_pScene->m_blendAnimB < 3) ? animNames[m_pScene->m_blendAnimB] : "Unknown";
-
-        ImGui::BulletText("Anim A (%s): %d%%", nameA, pctA);
-        ImGui::BulletText("Anim B (%s): %d%%", nameB, pctB);
     }
-
-    ImGui::Separator();
-	//heirarchy
-
 }
 
 void DX11Renderer::completeIMGUIDraw()
