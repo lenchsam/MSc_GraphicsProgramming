@@ -342,48 +342,48 @@ void Scene::CreateWaveAnimationSampler(int nodeIndex, Animation* anim)
 {
     // Samplers for the hand's translation and rotation.
     AnimationSampler nodeTranslationSampler, nodeRotationSampler;
-
     // Get the hand's structural bind pose.
-    // --- Keyframe 1: The Start Pose (t = 0.0s) ---
-    // The hand is in its default, non-animated state.
     DirectX::XMMATRIX nodeBindPose = DirectX::XMLoadFloat4x4(&m_robotArmSkeleton.GetJoint(nodeIndex)->localBindTransform);
 
-    XMFLOAT3 constantPos = BakeTranslationOntoBindPose(nodeBindPose, { 0.0f, 0.0f, 0.0f });
-
+    // --- Keyframe 1: The Start Pose (t = 0.0s) ---
+    // The hand is in its default, non-animated state.
+    XMFLOAT3 startPos = BakeTranslationOntoBindPose(nodeBindPose, { 0.0f, 0.0f, 0.0f });
     nodeTranslationSampler.timestamps.push_back(0.0f);
-    nodeTranslationSampler.vec3_values.push_back(constantPos);
+    nodeTranslationSampler.vec3_values.push_back(startPos);
 
-    XMFLOAT4 startRot = BakeRotationOntoBindPose(nodeBindPose, { 0, 0, 1 }, 0.0f);
+    XMFLOAT4 startRot = BakeRotationOntoBindPose(nodeBindPose, { 0, 0, 1 }, 0.0f); // No rotation
     nodeRotationSampler.timestamps.push_back(0.0f);
     nodeRotationSampler.vec4_values.push_back(startRot);
-    // --- Keyframe 2: The End Pose (t = 2.0s) ---
 
+    // --- Keyframe 2: The Middle Pose (t = 1.0s) ---
+    // We add a middle frame to create the wave out action
     nodeTranslationSampler.timestamps.push_back(1.0f);
-    nodeTranslationSampler.vec3_values.push_back(constantPos);
+    nodeTranslationSampler.vec3_values.push_back(startPos);
 
+    XMFLOAT4 midRot = BakeRotationOntoBindPose(nodeBindPose, { 0, 0, 1 }, DirectX::XM_PIDIV4);
     nodeRotationSampler.timestamps.push_back(1.0f);
-    nodeRotationSampler.vec4_values.push_back(wavedRot);
+    nodeRotationSampler.vec4_values.push_back(midRot);
 
-    // --- Keyframe 3: End (t = 2.0s) -> Back to Neutral ---
+    // --- Keyframe 3: The End Pose (t = 2.0s) ---
+    // The hand is translated up and rotated 90 degrees to the side.
+    XMFLOAT3 endPos = BakeTranslationOntoBindPose(nodeBindPose, { 0.0f, 0.0f, 0.0f }); // Move up slightly
     nodeTranslationSampler.timestamps.push_back(2.0f);
-    nodeTranslationSampler.vec3_values.push_back(constantPos);
+    nodeTranslationSampler.vec3_values.push_back(endPos);
 
+    // We reuse startRot here to ensure it snaps back to the beginning seamlessly
     nodeRotationSampler.timestamps.push_back(2.0f);
     nodeRotationSampler.vec4_values.push_back(startRot);
 
     // --- Add Samplers and Channels for the node ---
-    anim->m_samplers.push_back(nodeTranslationSampler);
+    anim->m_samplers.push_back(nodeTranslationSampler); // Sampler x
     int nodeTranslationSamplerIndex = anim->m_samplers.size() - 1;
-
-    anim->m_samplers.push_back(nodeRotationSampler);
+    anim->m_samplers.push_back(nodeRotationSampler); // Sampler x+1
     int nodeRotationSamplerIndex = anim->m_samplers.size() - 1;
-
     AnimationChannel transChannel;
     transChannel.path = AnimationChannel::TRANSLATION;
     transChannel.samplerIndex = nodeTranslationSamplerIndex;
     transChannel.jointIndex = nodeIndex;
     anim->m_channels.push_back(transChannel);
-
     AnimationChannel rotChannel;
     rotChannel.path = AnimationChannel::ROTATION;
     rotChannel.samplerIndex = nodeRotationSamplerIndex;
