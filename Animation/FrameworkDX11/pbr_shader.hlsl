@@ -146,39 +146,51 @@ PS_INPUT VS(VS_INPUT input)
     float4 skinnedPos = float4(0, 0, 0, 0);
     float3 skinnedNorm = float3(0, 0, 0);
 
-    int indexX = input.Joints.x;
-    float4x4 jointXMatrix = g_boneTransforms[indexX];
-    float jointXWeight = input.Weights.x;
-    skinnedPos += mul(input.Pos, jointXMatrix) * jointXWeight;
-	
-    int indexY = input.Joints.y;
-    float4x4 jointYMatrix = g_boneTransforms[indexY];
-    float jointYWeight = input.Weights.y;
-    skinnedPos += mul(input.Pos, jointYMatrix) * jointYWeight;
-	
-    int indexZ = input.Joints.z;
-    float4x4 jointZMatrix = g_boneTransforms[indexZ];
-    float jointZWeight = input.Weights.z;
-    skinnedPos += mul(input.Pos, jointZMatrix) * jointZWeight;
-	
-    int indexW = input.Joints.w;
-    float4x4 jointWMatrix = g_boneTransforms[indexW];
-    float jointWWeight = input.Weights.w;
-    skinnedPos += mul(input.Pos, jointWMatrix) * jointWWeight;
-	
-    skinnedPos.w = 1.0f;
+    // --- FIX START: Check if the object is skinned ---
+    // We sum the weights. If they equal 0, this is a static object (like the sphere).
+    float weightSum = input.Weights.x + input.Weights.y + input.Weights.z + input.Weights.w;
+
+    if (weightSum == 0.0f)
+    {
+        // It's a static object (Sphere), just use the original position and normal
+        skinnedPos = input.Pos;
+        skinnedPos.w = 1.0f;
+        skinnedNorm = input.Norm;
+    }
+    else
+    {
+        // It's a skinned object (Fox), use the bone transforms
+        int indexX = input.Joints.x;
+        float4x4 jointXMatrix = g_boneTransforms[indexX];
+        float jointXWeight = input.Weights.x;
+        skinnedPos += mul(input.Pos, jointXMatrix) * jointXWeight;
+        skinnedNorm += mul(input.Norm, (float3x3) jointXMatrix) * jointXWeight;
+
+        int indexY = input.Joints.y;
+        float4x4 jointYMatrix = g_boneTransforms[indexY];
+        float jointYWeight = input.Weights.y;
+        skinnedPos += mul(input.Pos, jointYMatrix) * jointYWeight;
+        skinnedNorm += mul(input.Norm, (float3x3) jointYMatrix) * jointYWeight;
+
+        int indexZ = input.Joints.z;
+        float4x4 jointZMatrix = g_boneTransforms[indexZ];
+        float jointZWeight = input.Weights.z;
+        skinnedPos += mul(input.Pos, jointZMatrix) * jointZWeight;
+        skinnedNorm += mul(input.Norm, (float3x3) jointZMatrix) * jointZWeight;
+
+        int indexW = input.Joints.w;
+        float4x4 jointWMatrix = g_boneTransforms[indexW];
+        float jointWWeight = input.Weights.w;
+        skinnedPos += mul(input.Pos, jointWMatrix) * jointWWeight;
+        skinnedNorm += mul(input.Norm, (float3x3) jointWMatrix) * jointWWeight;
+        
+        skinnedPos.w = 1.0f;
+    }
+    // --- FIX END ---
     
-    // Joint X
-    skinnedNorm += mul(input.Norm, (float3x3) jointXMatrix) * jointXWeight;
-    // Joint Y
-    skinnedNorm += mul(input.Norm, (float3x3) jointYMatrix) * jointYWeight;
-    // Joint Z
-    skinnedNorm += mul(input.Norm, (float3x3) jointZMatrix) * jointZWeight;
-    // Joint W
-    skinnedNorm += mul(input.Norm, (float3x3) jointWMatrix) * jointWWeight;
-	
     PS_INPUT output = (PS_INPUT) 0;
     
+    // Transform by World, View, Projection
     output.Pos = mul(skinnedPos, World);
     output.worldPos = output.Pos;
     output.Pos = mul(output.Pos, View);

@@ -44,6 +44,7 @@ public:
 	void CreateWaveAnimationSampler(int nodeIndex, Animation* anim);
 	void CreateWaveAnimationSamplerForPreSkin(int nodeIndex, Animation* anim, Skeleton* skeleton);
 	Animation CreateWaveAnimation(Skeleton* s);
+	Animation CreateWaveArmAnimation();
 
 private:
 	void setupLightProperties();
@@ -61,6 +62,7 @@ public:
 	LightPropertiesConstantBuffer m_lightProperties;
 	IRenderingContext m_ctx;
 	SceneGraph m_sceneobject;
+	SceneGraph m_armobject;
 	SceneGraph m_foxobject;
 
 	Skeleton m_robotArmSkeleton;
