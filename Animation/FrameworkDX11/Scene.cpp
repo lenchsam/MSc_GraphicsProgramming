@@ -23,6 +23,8 @@ HRESULT Scene::init(HWND hwnd, const Microsoft::WRL::ComPtr<ID3D11Device>& devic
     bool okFox = m_foxobject.LoadGLTFWithSkeleton(m_ctx, L"Resources\\Fox.gltf");
     bool ok = m_sceneobject.LoadGLTFWithSkeleton(m_ctx, L"Resources\\simplerig.gltf");
 
+    m_sceneobject.GetRootNode(0)->AddTranslation({ -3.0f, 0.0f, 0.0f });
+
     Skeleton* s = m_sceneobject.GetRootNode(0)->GetSkeleton();
     CreateWaveAnimation(s);
 
@@ -228,8 +230,9 @@ void Scene::update(const float deltaTime)
 
    
 
-    //m_sceneobject.AnimateFrame(m_ctx);
-    //m_sceneobject.RenderFrame(m_ctx, deltaTime);
+    m_sceneobject.AnimateFrame(m_ctx);
+    m_sceneobject.RenderFrame(m_ctx, deltaTime);
+
 	m_armobject.AnimateFrame(m_ctx);
 	m_armobject.RenderFrame(m_ctx, deltaTime);
 }
